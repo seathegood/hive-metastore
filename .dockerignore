@@ -15,5 +15,3 @@ node_modules/
 # Ignore local configs and docs
 README.md
 LICENSE
-docker-entrypoint.sh
-healthcheck.sh

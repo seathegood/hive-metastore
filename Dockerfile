@@ -30,6 +30,9 @@ COPY postgresql-jdbc.jar /opt/hive/lib/
 # Set working directory
 WORKDIR $HIVE_HOME
 
+# Optional volumes for logs and temp files
+VOLUME ["/opt/hive/logs", "/opt/hive/tmp"]
+
 # Expose the default Hive Metastore port
 EXPOSE 9083
 

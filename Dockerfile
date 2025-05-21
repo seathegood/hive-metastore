@@ -2,13 +2,16 @@ FROM openjdk:8-jdk-slim
 
 # Set build-time arguments
 ARG HIVE_VERSION=3.1.3
+ARG BUILD_DATE
+ARG VCS_REF
 
 # Set environment variables
 ENV HIVE_VERSION=${HIVE_VERSION} \
     HIVE_HOME=/opt/hive \
     HADOOP_HOME=/opt/hadoop \
     JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom" \
-    PG_JDBC_VERSION=42.7.3
+    PG_JDBC_VERSION=42.7.3 \
+    HIVE_TARBALL_SHA256="c9e1f02a361d0327232e1abec7c1c058f67803eb17399d8db06340f344d3f95a"  # from SHA256 of Hive 3.1.3 tarball
 
 # Add OCI-compliant image labels
 LABEL \
@@ -18,31 +21,26 @@ LABEL \
   org.opencontainers.image.description="Minimal Hive Metastore image using an external PostgreSQL database" \
   org.opencontainers.image.version=${HIVE_VERSION} \
   org.opencontainers.image.source="https://github.com/seathegood/hive-metastore" \
-  org.opencontainers.image.licenses="Apache-2.0"
+  org.opencontainers.image.licenses="Apache-2.0" \
+  org.opencontainers.image.created=${BUILD_DATE} \
+  org.opencontainers.image.revision=${VCS_REF}
 
-# Install required packages
+# Install and configure all dependencies in a single layer
 RUN apt-get update && \
     apt-get install -y wget netcat ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-
-# Download and extract Hive
-RUN mkdir -p $HIVE_HOME && \
+    mkdir -p $HIVE_HOME && \
     wget -q https://downloads.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz -O /tmp/hive.tar.gz && \
+    echo "$HIVE_TARBALL_SHA256  /tmp/hive.tar.gz" | sha256sum -c - && \
     tar -xzf /tmp/hive.tar.gz -C /opt && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \
-    rm -rf /tmp/hive.tar.gz
-
-# Download PostgreSQL JDBC driver with checksum verification
-RUN wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O /tmp/driver.jar && \
+    rm -rf /tmp/hive.tar.gz && \
+    wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O /tmp/driver.jar && \
     echo "2f658167b98f9f9992fd313db43d888a46ea01f85f49a81e33b1f59a8354bdbb  /tmp/driver.jar" | sha256sum -c - && \
     mv /tmp/driver.jar /opt/hive/lib/postgresql-jdbc.jar && \
-    rm -f /tmp/driver.jar
-
-# Remove build-time tools to reduce image surface
-RUN apt-get purge -y --auto-remove wget netcat && apt-get clean
-
-# Restrict file permissions
-RUN chmod -R go-rwx $HIVE_HOME
+    rm -f /tmp/driver.jar && \
+    apt-get purge -y --auto-remove wget netcat && \
+    apt-get clean && \
+    chmod -R go-rwx $HIVE_HOME
 
 # Create non-root hive user
 RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \

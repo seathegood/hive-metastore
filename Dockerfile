@@ -11,7 +11,7 @@ ENV HIVE_VERSION=${HIVE_VERSION} \
     HADOOP_HOME=/opt/hadoop \
     JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom" \
     PG_JDBC_VERSION=42.7.3 \
-    HIVE_TARBALL_SHA256="c9e1f02a361d0327232e1abec7c1c058f67803eb17399d8db06340f344d3f95a"  # from SHA256 of Hive 3.1.3 tarball
+    HIVE_TARBALL_SHA256="c9e1f02a361d0327232e1abec7c1c058f67803eb17399d8db06340f344d3f95a"
 
 # Add OCI-compliant image labels
 LABEL \

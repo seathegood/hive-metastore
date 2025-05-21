@@ -1,14 +1,27 @@
 FROM openjdk:8-jdk-slim
 
+# Set build-time arguments
+ARG HIVE_VERSION=3.1.3
+
+# Set environment variables
+ENV HIVE_VERSION=${HIVE_VERSION} \
+    HIVE_HOME=/opt/hive \
+    HADOOP_HOME=/opt/hadoop
+
+# Add OCI-compliant image labels
+LABEL \
+  org.opencontainers.image.vendor="Sea the Good, LLC" \
+  org.opencontainers.image.url="https://github.com/seathegood/hive-metastore" \
+  org.opencontainers.image.title="Hive Metastore" \
+  org.opencontainers.image.description="Minimal Hive Metastore image using an external PostgreSQL database" \
+  org.opencontainers.image.version=${HIVE_VERSION} \
+  org.opencontainers.image.source="https://github.com/seathegood/hive-metastore" \
+  org.opencontainers.image.licenses="Apache-2.0"
+
 # Install required packages
 RUN apt-get update && \
     apt-get install -y wget netcat && \
     rm -rf /var/lib/apt/lists/*
-
-# Set environment variables
-ENV HIVE_VERSION=3.1.3 \
-    HIVE_HOME=/opt/hive \
-    HADOOP_HOME=/opt/hadoop
 
 # Download and extract Hive
 RUN mkdir -p $HIVE_HOME && \
@@ -16,6 +29,10 @@ RUN mkdir -p $HIVE_HOME && \
     tar -xzf /tmp/hive.tar.gz -C /opt && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \
     rm -rf /tmp/hive.tar.gz
+
+# Create non-root hive user
+RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \
+    chown -R hive:hive $HIVE_HOME
 
 # Copy custom entrypoint and healthcheck scripts
 COPY docker-entrypoint.sh /usr/local/bin/
@@ -29,6 +46,9 @@ COPY postgresql-jdbc.jar /opt/hive/lib/
 
 # Set working directory
 WORKDIR $HIVE_HOME
+
+# Switch to non-root user
+USER hive
 
 # Optional volumes for logs and temp files
 VOLUME ["/opt/hive/logs", "/opt/hive/tmp"]

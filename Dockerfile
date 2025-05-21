@@ -7,7 +7,8 @@ ARG HIVE_VERSION=3.1.3
 ENV HIVE_VERSION=${HIVE_VERSION} \
     HIVE_HOME=/opt/hive \
     HADOOP_HOME=/opt/hadoop \
-    JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom"
+    JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom" \
+    PG_JDBC_VERSION=42.7.3
 
 # Add OCI-compliant image labels
 LABEL \
@@ -21,7 +22,7 @@ LABEL \
 
 # Install required packages
 RUN apt-get update && \
-    apt-get install -y wget netcat && \
+    apt-get install -y wget netcat ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and extract Hive
@@ -31,8 +32,11 @@ RUN mkdir -p $HIVE_HOME && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \
     rm -rf /tmp/hive.tar.gz
 
-# Copy PostgreSQL JDBC driver (assumes you add it to your build context)
-COPY postgresql-jdbc.jar /opt/hive/lib/
+# Download PostgreSQL JDBC driver with checksum verification
+RUN wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O /tmp/driver.jar && \
+    echo "2f658167b98f9f9992fd313db43d888a46ea01f85f49a81e33b1f59a8354bdbb  /tmp/driver.jar" | sha256sum -c - && \
+    mv /tmp/driver.jar /opt/hive/lib/postgresql-jdbc.jar && \
+    rm -f /tmp/driver.jar
 
 # Remove build-time tools to reduce image surface
 RUN apt-get purge -y --auto-remove wget netcat && apt-get clean

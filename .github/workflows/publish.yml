@@ -63,7 +63,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            HIVE_METASTORE_VERSION=${{ github.event.release.tag_name }}
+            HIVE_VERSION=${{ github.event.release.tag_name }}
             HIVE_TARBALL_SHA256=${{ env.HIVE_TARBALL_SHA256 }}
             BUILD_DATE=${{ steps.meta.outputs.created }}
             VCS_REF=${{ github.sha }}

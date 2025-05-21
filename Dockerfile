@@ -24,8 +24,8 @@ COPY healthcheck.sh /usr/local/bin/
 # Make scripts executable
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/healthcheck.sh
 
-# Copy JDBC driver (assumes you add it to your build context)
-COPY mysql-connector-java.jar /opt/hive/lib/
+# Copy PostgreSQL JDBC driver (assumes you add it to your build context)
+COPY postgresql-jdbc.jar /opt/hive/lib/
 
 # Set working directory
 WORKDIR $HIVE_HOME

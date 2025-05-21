@@ -47,6 +47,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: Load tarball hash from versions.json
+        id: hive_hash
+        run: |
+          version=${{ github.event.release.tag_name }}
+          hash=$(jq -r --arg v "$version" '.[$v].sha256' versions.json)
+          echo "HIVE_TARBALL_SHA256=$hash" >> $GITHUB_ENV
+
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v5
@@ -57,6 +64,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             HIVE_METASTORE_VERSION=${{ github.event.release.tag_name }}
+            HIVE_TARBALL_SHA256=${{ env.HIVE_TARBALL_SHA256 }}
             BUILD_DATE=${{ steps.meta.outputs.created }}
             VCS_REF=${{ github.sha }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true

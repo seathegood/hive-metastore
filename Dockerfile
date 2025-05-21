@@ -4,6 +4,7 @@ FROM openjdk:8-jdk-slim
 ARG HIVE_VERSION=3.1.3
 ARG BUILD_DATE
 ARG VCS_REF
+ARG HIVE_TARBALL_SHA256
 
 # Set environment variables
 ENV HIVE_VERSION=${HIVE_VERSION} \
@@ -11,7 +12,7 @@ ENV HIVE_VERSION=${HIVE_VERSION} \
     HADOOP_HOME=/opt/hadoop \
     JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom" \
     PG_JDBC_VERSION=42.7.3 \
-    HIVE_TARBALL_SHA256="c9e1f02a361d0327232e1abec7c1c058f67803eb17399d8db06340f344d3f95a"
+    HIVE_TARBALL_SHA256=${HIVE_TARBALL_SHA256}
 
 # Add OCI-compliant image labels
 LABEL \
@@ -27,7 +28,7 @@ LABEL \
 
 # Install and configure all dependencies in a single layer
 RUN apt-get update && \
-    apt-get install -y wget netcat ca-certificates && \
+    apt-get install -y wget netcat ca-certificates jq && \
     mkdir -p $HIVE_HOME && \
     wget -q https://downloads.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz -O /tmp/hive.tar.gz && \
     echo "$HIVE_TARBALL_SHA256  /tmp/hive.tar.gz" | sha256sum -c - && \

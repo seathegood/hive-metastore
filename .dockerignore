@@ -1,0 +1,19 @@
+# Ignore version control and dev tools
+.git
+.github
+*.log
+*.zip
+
+# Ignore build artifacts and temp files
+*.tar.gz
+*.jar
+__pycache__/
+.DS_Store
+tmp/
+node_modules/
+
+# Ignore local configs and docs
+README.md
+LICENSE
+docker-entrypoint.sh
+healthcheck.sh

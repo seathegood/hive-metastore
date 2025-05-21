@@ -6,7 +6,8 @@ ARG HIVE_VERSION=3.1.3
 # Set environment variables
 ENV HIVE_VERSION=${HIVE_VERSION} \
     HIVE_HOME=/opt/hive \
-    HADOOP_HOME=/opt/hadoop
+    HADOOP_HOME=/opt/hadoop \
+    JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom"
 
 # Add OCI-compliant image labels
 LABEL \
@@ -30,6 +31,15 @@ RUN mkdir -p $HIVE_HOME && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \
     rm -rf /tmp/hive.tar.gz
 
+# Copy PostgreSQL JDBC driver (assumes you add it to your build context)
+COPY postgresql-jdbc.jar /opt/hive/lib/
+
+# Remove build-time tools to reduce image surface
+RUN apt-get purge -y --auto-remove wget netcat && apt-get clean
+
+# Restrict file permissions
+RUN chmod -R go-rwx $HIVE_HOME
+
 # Create non-root hive user
 RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \
     chown -R hive:hive $HIVE_HOME
@@ -40,9 +50,6 @@ COPY healthcheck.sh /usr/local/bin/
 
 # Make scripts executable
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/healthcheck.sh
-
-# Copy PostgreSQL JDBC driver (assumes you add it to your build context)
-COPY postgresql-jdbc.jar /opt/hive/lib/
 
 # Set working directory
 WORKDIR $HIVE_HOME

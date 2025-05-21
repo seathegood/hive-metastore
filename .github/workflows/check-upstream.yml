@@ -1,0 +1,53 @@
+name: Check for New Hive Releases
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2am UTC
+  workflow_dispatch:
+
+jobs:
+  check-hive-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get latest Hive version
+        id: hive
+        run: |
+          latest=$(curl -s https://downloads.apache.org/hive/ | grep -oP 'hive-\K[0-9.]+(?=/)' | sort -V | tail -1)
+          echo "latest=$latest" >> $GITHUB_OUTPUT
+
+      - name: Get current version from Dockerfile
+        id: current
+        run: |
+          current=$(grep -oP 'ARG HIVE_VERSION=\K[0-9.]+' Dockerfile)
+          echo "current=$current" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        if: steps.hive.outputs.latest != steps.current.outputs.current
+        run: |
+          echo "New version found: ${{ steps.hive.outputs.latest }}"
+          echo "Current version: ${{ steps.current.outputs.current }}"
+
+      - name: Create branch and update Dockerfile
+        if: steps.hive.outputs.latest != steps.current.outputs.current
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git fetch origin
+          git checkout -b release-hive-${{ steps.hive.outputs.latest }}
+
+          sed -i "s/ARG HIVE_VERSION=.*/ARG HIVE_VERSION=${{ steps.hive.outputs.latest }}/" Dockerfile
+          git commit -am "Update to Hive ${{ steps.hive.outputs.latest }}"
+          git push origin release-hive-${{ steps.hive.outputs.latest }}
+
+      - name: Create GitHub Release
+        if: steps.hive.outputs.latest != steps.current.outputs.current
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v${{ steps.hive.outputs.latest }} \
+            --title "Hive ${{ steps.hive.outputs.latest }}" \
+            --notes "Automated release for Hive ${{ steps.hive.outputs.latest }}"

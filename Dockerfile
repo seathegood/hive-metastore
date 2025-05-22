@@ -1,4 +1,6 @@
-FROM openjdk:8-jdk-slim
+FROM eclipse-temurin@sha256:a125aa56c71c24f2814c82cbe8309c8d3196c7525cef1d92e6ea31bdeff2e8fc
+
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 # Set build-time arguments
 ARG HIVE_VERSION=4.0.1
@@ -11,8 +13,7 @@ ENV HIVE_VERSION=${HIVE_VERSION} \
     HIVE_HOME=/opt/hive \
     HADOOP_HOME=/opt/hadoop \
     JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom" \
-    PG_JDBC_VERSION=42.7.3 \
-    HIVE_TARBALL_SHA256=${HIVE_TARBALL_SHA256}
+    PG_JDBC_VERSION=42.7.5
 
 # Add OCI-compliant image labels
 LABEL \
@@ -28,19 +29,20 @@ LABEL \
 
 # Install and configure all dependencies in a single layer
 RUN apt-get update && \
-    apt-get install -y wget netcat ca-certificates jq && \
+    apt-get install -y wget netcat-openbsd ca-certificates jq && \
     mkdir -p $HIVE_HOME && \
-    wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz -O /tmp/hive.tar.gz && \
-    wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 -O /tmp/hive.tar.gz.sha256 && \
-    sha256sum -c /tmp/hive.tar.gz.sha256 && \
-    tar -xzf /tmp/hive.tar.gz -C /opt && \
+    cd /tmp && \
+    wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz && \
+    wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \
+    sha256sum -c apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \
+    tar -xzf apache-hive-${HIVE_VERSION}-bin.tar.gz -C /opt && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \
-    rm -rf /tmp/hive.tar.gz /tmp/hive.tar.gz.sha256 && \
+    rm -rf /tmp/apache-hive-${HIVE_VERSION}-bin.tar.gz /tmp/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \
     wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O /tmp/driver.jar && \
-    echo "2f658167b98f9f9992fd313db43d888a46ea01f85f49a81e33b1f59a8354bdbb  /tmp/driver.jar" | sha256sum -c - && \
+    echo "69020b3bd20984543e817393f2e6c01a890ef2e37a77dd11d6d8508181d079ab  /tmp/driver.jar" | sha256sum -c - && \
     mv /tmp/driver.jar /opt/hive/lib/postgresql-jdbc.jar && \
     rm -f /tmp/driver.jar && \
-    apt-get purge -y --auto-remove wget netcat && \
+    apt-get purge -y --auto-remove wget netcat-openbsd && \
     apt-get clean && \
     chmod -R go-rwx $HIVE_HOME
 
@@ -49,8 +51,8 @@ RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \
     chown -R hive:hive $HIVE_HOME
 
 # Copy custom entrypoint and healthcheck scripts
-COPY docker-entrypoint.sh /usr/local/bin/
-COPY healthcheck.sh /usr/local/bin/
+COPY --chown=hive:hive docker-entrypoint.sh /usr/local/bin/
+COPY --chown=hive:hive healthcheck.sh /usr/local/bin/
 
 # Make scripts executable
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/healthcheck.sh

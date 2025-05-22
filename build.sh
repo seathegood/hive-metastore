@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION=$1
+VERSION=${1:-4.0.1}
 SHA=$(jq -r --arg version "$VERSION" '.[$version].sha256' versions.json)
 
 docker build \

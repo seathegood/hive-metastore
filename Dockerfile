@@ -30,7 +30,7 @@ LABEL \
 RUN apt-get update && \
     apt-get install -y wget netcat ca-certificates jq && \
     mkdir -p $HIVE_HOME && \
-    wget -q https://downloads.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz -O /tmp/hive.tar.gz && \
+    wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz -O /tmp/hive.tar.gz && \
     echo "$HIVE_TARBALL_SHA256  /tmp/hive.tar.gz" | sha256sum -c - && \
     tar -xzf /tmp/hive.tar.gz -C /opt && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \

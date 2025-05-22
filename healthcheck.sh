@@ -1,9 +1,12 @@
 #!/bin/bash
+set -euo pipefail
 
-# Use netcat to test if the Hive Metastore port is accepting connections
-if nc -z localhost 9083; then
+HOST="${HIVE_METASTORE_HOST:-localhost}"
+PORT="${HIVE_METASTORE_PORT:-9083}"
+
+if nc -z -w 2 "$HOST" "$PORT"; then
   exit 0
 else
-  echo "Hive Metastore is not responding on port 9083"
+  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") Hive Metastore is not responding on $HOST:$PORT"
   exit 1
 fi

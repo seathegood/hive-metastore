@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Validate required environment variables
 : "${METASTORE_DB_URL:?Missing METASTORE_DB_URL}"
@@ -41,13 +41,24 @@ fi
 
 # Wait for DB availability
 echo "Waiting for PostgreSQL at ${METASTORE_DB_HOST}:${METASTORE_DB_PORT}..."
+timeout=60
+elapsed=0
 until nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
   sleep 5
+  elapsed=$((elapsed + 5))
+  if [ "$elapsed" -ge "$timeout" ]; then
+    echo "Error: Timed out waiting for ${METASTORE_DB_HOST}:${METASTORE_DB_PORT}"
+    exit 1
+  fi
 done
 
 # Initialize schema if needed
-$HIVE_HOME/bin/schematool -dbType postgres -initSchema || true
+if ! $HIVE_HOME/bin/schematool -dbType postgres -info &>/dev/null; then
+  echo "Initializing Hive schema..."
+  $HIVE_HOME/bin/schematool -dbType postgres -initSchema
+fi
 
 # Launch Hive Metastore with logging
 echo "Starting Hive Metastore..."
-exec $HIVE_HOME/bin/hive --service metastore >> /opt/hive/logs/metastore.log 2>&1
+exec >> /opt/hive/logs/metastore.log 2>&1
+exec $HIVE_HOME/bin/hive --service metastore

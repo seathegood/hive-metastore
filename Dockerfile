@@ -1,7 +1,7 @@
 FROM openjdk:8-jdk-slim
 
 # Set build-time arguments
-ARG HIVE_VERSION=3.1.3
+ARG HIVE_VERSION=4.0.1
 ARG BUILD_DATE
 ARG VCS_REF
 ARG HIVE_TARBALL_SHA256
@@ -31,10 +31,11 @@ RUN apt-get update && \
     apt-get install -y wget netcat ca-certificates jq && \
     mkdir -p $HIVE_HOME && \
     wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz -O /tmp/hive.tar.gz && \
-    echo "$HIVE_TARBALL_SHA256  /tmp/hive.tar.gz" | sha256sum -c - && \
+    wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 -O /tmp/hive.tar.gz.sha256 && \
+    sha256sum -c /tmp/hive.tar.gz.sha256 && \
     tar -xzf /tmp/hive.tar.gz -C /opt && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \
-    rm -rf /tmp/hive.tar.gz && \
+    rm -rf /tmp/hive.tar.gz /tmp/hive.tar.gz.sha256 && \
     wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O /tmp/driver.jar && \
     echo "2f658167b98f9f9992fd313db43d888a46ea01f85f49a81e33b1f59a8354bdbb  /tmp/driver.jar" | sha256sum -c - && \
     mv /tmp/driver.jar /opt/hive/lib/postgresql-jdbc.jar && \

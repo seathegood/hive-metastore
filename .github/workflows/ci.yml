@@ -29,12 +29,8 @@ jobs:
             fi
           done < .env
 
-      - name: Validate required env vars
-        run: |
-          if [ -z "$REGISTRY_IMAGE" ]; then
-            echo "REGISTRY_IMAGE is not set. Make sure it is in your .env file or defined in the workflow."
-            exit 1
-          fi
+      - name: Override REGISTRY_IMAGE for CI use
+        run: echo "REGISTRY_IMAGE=ci-local/hive-metastore" >> $GITHUB_ENV
 
       - name: Set up Docker with containerd
         uses: docker/setup-docker-action@v4.0.0
@@ -160,9 +156,15 @@ jobs:
 
       - name: Load environment from .env file
         run: |
-          set -o allexport
-          source .env
-          set +o allexport
+          echo "Loading env vars into GITHUB_ENV"
+          while IFS='=' read -r key value; do
+            if [[ ! "$key" =~ ^# && -n "$key" ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < .env
+
+      - name: Override REGISTRY_IMAGE for CI use
+        run: echo "REGISTRY_IMAGE=ci-local/hive-metastore" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

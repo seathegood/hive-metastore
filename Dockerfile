@@ -1,6 +1,6 @@
 FROM eclipse-temurin:21-jdk-alpine
 
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+SHELL ["/bin/sh", "-c"]
 
 # Set build-time arguments
 ARG HIVE_VERSION=4.0.1
@@ -40,6 +40,8 @@ RUN apk update && \
       openssl \
       ca-certificates \
       jq
+      
+SHELL ["/bin/bash", "-c"]
       
 RUN mkdir -p $HIVE_HOME && \
     cd /tmp && \

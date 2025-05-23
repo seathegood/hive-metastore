@@ -34,7 +34,7 @@ RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
       bash \
-      coreutils \
+      shadow \
       wget \
       netcat-openbsd \
       openssl \

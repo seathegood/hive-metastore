@@ -32,8 +32,16 @@ LABEL \
 # Install and configure all dependencies in a single layer
 RUN apk update && \
     apk upgrade && \
-    apk add wget netcat-openbsd openssl ca-certificates jq && \
-    mkdir -p $HIVE_HOME && \
+    apk add --no-cache \
+      bash \
+      coreutils \
+      wget \
+      netcat-openbsd \
+      openssl \
+      ca-certificates \
+      jq
+      
+RUN mkdir -p $HIVE_HOME && \
     cd /tmp && \
     wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz && \
     wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \

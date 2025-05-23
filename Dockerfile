@@ -4,16 +4,19 @@ SHELL ["/bin/sh", "-c"]
 
 # Set build-time arguments
 ARG HIVE_VERSION=4.0.1
+ARG HADOOP_VERSION=3.3.6
 ARG BUILD_DATE
 ARG VCS_REF
 ARG HIVE_TARBALL_SHA256
 
 # Set environment variables
 ENV HIVE_VERSION=${HIVE_VERSION} \
+    HADOOP_VERSION=${HADOOP_VERSION} \
     HIVE_HOME=/opt/hive \
     HADOOP_HOME=/opt/hadoop \
     JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom" \
-    PG_JDBC_VERSION=42.7.5
+    PG_JDBC_VERSION=42.7.5 \
+    PATH="/opt/hadoop/bin:$PATH"
 
 COPY versions.json /opt/versions.json
 
@@ -56,9 +59,16 @@ RUN mkdir -p $HIVE_HOME && \
     echo "${PG_JDBC_SHA256}  /tmp/driver.jar" | sha256sum -c - && \
     mv /tmp/driver.jar /opt/hive/lib/postgresql-jdbc.jar && \
     rm -f /tmp/driver.jar && \
+    wget -q https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
+    wget -q https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
+    sha512sum -c hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
+    tar -xzf hadoop-${HADOOP_VERSION}.tar.gz -C /opt && \
+    mv /opt/hadoop-${HADOOP_VERSION} $HADOOP_HOME && \
+    rm -rf /tmp/hadoop-${HADOOP_VERSION}.tar.gz /tmp/hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
     apk del wget netcat-openbsd && \
     rm -rf /var/cache/apk/* && \
-    chmod -R go-rwx $HIVE_HOME
+    chmod -R go-rwx $HIVE_HOME && \
+    chmod -R go-rwx $HADOOP_HOME
 
 # Create non-root hive user
 RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \

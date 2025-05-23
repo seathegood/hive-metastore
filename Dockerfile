@@ -56,8 +56,8 @@ RUN mkdir -p $HIVE_HOME && \
     echo "${PG_JDBC_SHA256}  /tmp/driver.jar" | sha256sum -c - && \
     mv /tmp/driver.jar /opt/hive/lib/postgresql-jdbc.jar && \
     rm -f /tmp/driver.jar && \
-    apt-get purge -y --auto-remove wget netcat-openbsd && \
-    apt-get clean && \
+    apk del wget netcat-openbsd && \
+    rm -rf /var/cache/apk/* && \
     chmod -R go-rwx $HIVE_HOME
 
 # Create non-root hive user

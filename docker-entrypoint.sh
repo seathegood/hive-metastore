@@ -5,7 +5,7 @@ set -euo pipefail
 alias nc=netcat
 
 # Set HADOOP_HOME for schematool
-export HADOOP_HOME=/opt/hadoop/hadoop
+export HADOOP_HOME=/opt/hadoop
 export PATH="$HADOOP_HOME/bin:$PATH"
 
 # Validate required environment variables

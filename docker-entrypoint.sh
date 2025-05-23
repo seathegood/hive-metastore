@@ -15,7 +15,7 @@ export PATH="$HADOOP_HOME/bin:$PATH"
 : "${METASTORE_DB_PORT:?Missing METASTORE_DB_PORT}"
 
 # Build Postgres ConnectionURL
-: "${METASTORE_DB_URL:=jdbc:postgresql://$METASTORE_DB_HOST}:${METASTORE_DB_PORT}/metastore_db}"
+: "${METASTORE_DB_URL:=jdbc:postgresql://${METASTORE_DB_HOST}:${METASTORE_DB_PORT}/metastore_db}"
 
 # If no custom hive-site.xml is mounted, generate one
 if [ ! -f "$HIVE_HOME/conf/hive-site.xml" ]; then

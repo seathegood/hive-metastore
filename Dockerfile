@@ -73,7 +73,8 @@ RUN mkdir -p $HIVE_HOME && \
 
 # Create non-root hive user
 RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \
-    chown -R hive:hive $HIVE_HOME
+    chown -R hive:hive $HIVE_HOME && \
+    chown -R hive:hive $HADOOP_HOME
 
 # Copy custom entrypoint and healthcheck scripts
 COPY --chown=hive:hive docker-entrypoint.sh /usr/local/bin/

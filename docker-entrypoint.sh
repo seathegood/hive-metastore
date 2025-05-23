@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+alias nc=netcat
+
 # Validate required environment variables
 : "${METASTORE_DB_USER:?Missing METASTORE_DB_USER}"
 : "${METASTORE_DB_PASSWORD:?Missing METASTORE_DB_PASSWORD}"

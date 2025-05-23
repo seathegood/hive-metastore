@@ -20,7 +20,7 @@ jobs:
           set +o allexport
 
       - name: Set up Docker with containerd
-        uses: docker/setup-docker@v2
+        uses: docker/setup-docker-action@v4
         with:
           daemon-config: |
             {

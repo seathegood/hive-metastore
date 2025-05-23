@@ -1,0 +1,211 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load environment from .env file
+        run: |
+          set -o allexport
+          source .env
+          set +o allexport
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new \
+            -t ${{ env.REGISTRY_IMAGE }}:ci-test .
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Start PostgreSQL
+        run: |
+          docker run -d \
+            --name pg-test \
+            -e POSTGRES_DB=${{ env.POSTGRES_DB }} \
+            -e POSTGRES_USER=${{ env.POSTGRES_USER }} \
+            -e POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+            -p ${{ env.METASTORE_DB_PORT }}:${{ env.METASTORE_DB_PORT }} \
+            postgres:15
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..10}; do
+            if docker exec pg-test pg_isready -U ${{ env.POSTGRES_USER }}; then exit 0; fi
+            sleep 3
+          done
+          exit 1
+
+      - name: Run Hive Metastore with external DB
+        run: |
+          docker run -d --name metastore-test \
+            --link pg-test:postgres \
+            -e METASTORE_DB_HOST=postgres \
+            -e METASTORE_DB_PORT=${{ env.METASTORE_DB_PORT }} \
+            -e METASTORE_DB_NAME=${{ env.POSTGRES_DB }} \
+            -e METASTORE_DB_USER=${{ env.POSTGRES_USER }} \
+            -e METASTORE_DB_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+            -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} ${{ env.REGISTRY_IMAGE }}:ci-test
+          sleep 15
+
+      - name: Check health status
+        run: |
+          for i in {1..10}; do
+            health=$(docker inspect --format='{{.State.Health.Status}}' metastore-test)
+            if [ "$health" = "healthy" ]; then exit 0; fi
+            sleep 5
+          done
+          docker inspect metastore-test
+          exit 1
+
+      - name: Verify required files
+        run: |
+          docker run --rm ${{ env.REGISTRY_IMAGE }}:ci-test test -f /opt/hive/lib/postgresql-jdbc.jar
+          docker run --rm ${{ env.REGISTRY_IMAGE }}:ci-test test -f /opt/hive/conf/hive-site.xml
+
+      - name: Validate versions.json
+        run: |
+          jq -e 'has("hive") and has("postgresql")' versions.json
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint shell scripts
+        run: shellcheck docker-entrypoint.sh healthcheck.sh
+
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker rm -f metastore-test || true
+          docker rm -f pg-test || true
+
+      - name: Save logs
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker logs metastore-test 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/metastore.log || true
+          docker logs pg-test 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/postgres.log || true
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs
+          path: artifacts/
+  test-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        hive_version: ["4.0.0", "4.0.1"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load environment from .env file
+        run: |
+          set -o allexport
+          source .env
+          set +o allexport
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Start PostgreSQL
+        run: |
+          docker run -d \
+            --name pg-test-${{ matrix.hive_version }} \
+            -e POSTGRES_DB=${{ env.POSTGRES_DB }} \
+            -e POSTGRES_USER=${{ env.POSTGRES_USER }} \
+            -e POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+            -p ${{ env.METASTORE_DB_PORT }}:${{ env.METASTORE_DB_PORT }} \
+            postgres:15
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..10}; do
+            if docker exec pg-test-${{ matrix.hive_version }} pg_isready -U ${{ env.POSTGRES_USER }}; then exit 0; fi
+            sleep 3
+          done
+          exit 1
+
+      - name: Build image for Hive ${{ matrix.hive_version }}
+        run: |
+          docker build \
+            --build-arg HIVE_VERSION=${{ matrix.hive_version }} \
+            --build-arg HIVE_TARBALL_SHA256=$(jq -r --arg v "${{ matrix.hive_version }}" '.hive[$v].sha256' versions.json) \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new \
+            -t ${{ env.REGISTRY_IMAGE }}:${{ matrix.hive_version }} .
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Run Hive Metastore for ${{ matrix.hive_version }}
+        run: |
+          docker run -d --name metastore-test-${{ matrix.hive_version }} \
+            --link pg-test-${{ matrix.hive_version }}:postgres \
+            -e METASTORE_DB_HOST=postgres \
+            -e METASTORE_DB_PORT=${{ env.METASTORE_DB_PORT }} \
+            -e METASTORE_DB_NAME=${{ env.POSTGRES_DB }} \
+            -e METASTORE_DB_USER=${{ env.POSTGRES_USER }} \
+            -e METASTORE_DB_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+            -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} ${{ env.REGISTRY_IMAGE }}:${{ matrix.hive_version }}
+          sleep 15
+
+      - name: Check health for ${{ matrix.hive_version }}
+        run: |
+          for i in {1..10}; do
+            health=$(docker inspect --format='{{.State.Health.Status}}' metastore-test-${{ matrix.hive_version }})
+            if [ "$health" = "healthy" ]; then exit 0; fi
+            sleep 5
+          done
+          docker inspect metastore-test-${{ matrix.hive_version }}
+          exit 1
+
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker rm -f metastore-test-${{ matrix.hive_version }} || true
+          docker rm -f pg-test-${{ matrix.hive_version }} || true
+
+      - name: Save logs
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker logs metastore-test-${{ matrix.hive_version }} 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/metastore-${{ matrix.hive_version }}.log || true
+          docker logs pg-test-${{ matrix.hive_version }} 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/postgres-${{ matrix.hive_version }}.log || true
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs-${{ matrix.hive_version }}
+          path: artifacts/

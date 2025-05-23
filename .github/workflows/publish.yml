@@ -4,17 +4,22 @@ on:
   release:
     types: [published]
 
-env:
-  REGISTRY_IMAGE: seathegood/hive-metastore
-
 jobs:
   build:
     name: Build Docker images
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [linux/amd64, linux/arm64]
+        include:
+          - platform: linux/amd64
+          - platform: linux/arm64
     steps:
+      - name: Load environment from .env file
+        run: |
+          set -o allexport
+          source .env
+          set +o allexport
+
       - name: Prepare environment
         run: |
           platform=${{ matrix.platform }}
@@ -51,7 +56,7 @@ jobs:
         id: hive_hash
         run: |
           version=${{ github.event.release.tag_name }}
-          hash=$(jq -r --arg v "$version" '.[$v].sha256' versions.json)
+          hash=$(jq -r --arg v "$version" '.hive[$v].sha256' versions.json)
           echo "HIVE_TARBALL_SHA256=$hash" >> $GITHUB_ENV
 
       - name: Build and push by digest
@@ -88,7 +93,7 @@ jobs:
     continue-on-error: false
     steps:
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@v0.12.0
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: seathegood/hive-metastore:${{ github.event.release.tag_name }}
           format: table

@@ -15,6 +15,8 @@ ENV HIVE_VERSION=${HIVE_VERSION} \
     JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom" \
     PG_JDBC_VERSION=42.7.5
 
+COPY versions.json /opt/versions.json
+
 # Add OCI-compliant image labels
 LABEL \
   org.opencontainers.image.vendor="Sea the Good, LLC" \
@@ -38,8 +40,9 @@ RUN apt-get update && \
     tar -xzf apache-hive-${HIVE_VERSION}-bin.tar.gz -C /opt && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \
     rm -rf /tmp/apache-hive-${HIVE_VERSION}-bin.tar.gz /tmp/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \
+    PG_JDBC_SHA256=$(jq -r --arg ver "$PG_JDBC_VERSION" '.postgresql[$ver].sha256' /opt/versions.json) && \
     wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O /tmp/driver.jar && \
-    echo "69020b3bd20984543e817393f2e6c01a890ef2e37a77dd11d6d8508181d079ab  /tmp/driver.jar" | sha256sum -c - && \
+    echo "${PG_JDBC_SHA256}  /tmp/driver.jar" | sha256sum -c - && \
     mv /tmp/driver.jar /opt/hive/lib/postgresql-jdbc.jar && \
     rm -f /tmp/driver.jar && \
     apt-get purge -y --auto-remove wget netcat-openbsd && \

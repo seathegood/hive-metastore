@@ -1,7 +1,10 @@
 # Hive Metastore Docker Image (PostgreSQL Backend)
 
+
 ![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/seathegood/hive-metastore)
 ![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)
+[![CI](https://github.com/seathegood/hive-metastore/actions/workflows/ci.yml/badge.svg)](https://github.com/seathegood/hive-metastore/actions/workflows/ci.yml)
+[![Publish](https://github.com/seathegood/hive-metastore/actions/workflows/publish.yml/badge.svg)](https://github.com/seathegood/hive-metastore/actions/workflows/publish.yml)
 
 This is a minimal, hardened Docker image for running the [Apache Hive Metastore](https://hive.apache.org) backed by an external PostgreSQL database. Designed for use in containerized environments with an emphasis on security, observability, and compliance.
 
@@ -99,6 +102,10 @@ docker build -t hive-metastore:local --build-arg HIVE_VERSION=3.1.3 .
 ## CI/CD
 
 This project uses GitHub Actions to build and publish multi-arch Docker images on each release.
+
+- `ci.yml`: Validates builds and tests against PostgreSQL
+- `publish.yml`: Builds and pushes tagged releases to Docker Hub
+- `check-upstream.yml`: Monitors Apache Hive for new releases, updates the Dockerfile and versions.json, and creates a GitHub release which triggers `publish.yml`
 
 ---
 

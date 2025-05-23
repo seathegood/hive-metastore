@@ -13,6 +13,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Load environment from .env file
+        run: |
+          set -o allexport
+          source .env
+          set +o allexport
+
       - name: Get latest Hive version
         id: hive
         run: |
@@ -22,7 +28,7 @@ jobs:
       - name: Get current version from Dockerfile
         id: current
         run: |
-          current=$(grep -oP 'ARG HIVE_VERSION=\K[0-9.]+' Dockerfile)
+          current=$(grep -oP 'ARG HIVE_VERSION=\K[0-9.]+' $DOCKERFILE_PATH)
           echo "current=$current" >> $GITHUB_OUTPUT
 
       - name: Compare versions
@@ -31,23 +37,33 @@ jobs:
           echo "New version found: ${{ steps.hive.outputs.latest }}"
           echo "Current version: ${{ steps.current.outputs.current }}"
 
-      - name: Create branch and update Dockerfile
+      - name: Update Dockerfile and versions.json on main
         if: steps.hive.outputs.latest != steps.current.outputs.current
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git fetch origin
-          git checkout -b release-hive-${{ steps.hive.outputs.latest }}
+          git config user.name "$GIT_USER_NAME"
+          git config user.email "$GIT_USER_EMAIL"
+          git checkout main
+          git pull origin main
 
-          sed -i "s/ARG HIVE_VERSION=.*/ARG HIVE_VERSION=${{ steps.hive.outputs.latest }}/" Dockerfile
+          sed -i "s/ARG HIVE_VERSION=.*/ARG HIVE_VERSION=${{ steps.hive.outputs.latest }}/" $DOCKERFILE_PATH
+
+          # Fetch SHA256 and update versions.json
+          sha=$(curl -s $HIVE_DOWNLOAD_BASE/hive-${{ steps.hive.outputs.latest }}/apache-hive-${{ steps.hive.outputs.latest }}-bin.tar.gz.sha256 | cut -d' ' -f1)
+          jq --arg v "${{ steps.hive.outputs.latest }}" --arg s "$sha" '.hive[$v] = {sha256: $s}' $VERSION_FILE > tmp.json && mv tmp.json $VERSION_FILE
+
+          git add $VERSION_FILE
+
           git commit -am "Update to Hive ${{ steps.hive.outputs.latest }}"
-          git push origin release-hive-${{ steps.hive.outputs.latest }}
+          git push origin main
 
       - name: Create GitHub Release
         if: steps.hive.outputs.latest != steps.current.outputs.current
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git tag -f v${{ steps.hive.outputs.latest }}
+          git push origin -f v${{ steps.hive.outputs.latest }}
           gh release create v${{ steps.hive.outputs.latest }} \
             --title "Hive ${{ steps.hive.outputs.latest }}" \
-            --notes "Automated release for Hive ${{ steps.hive.outputs.latest }}"
+            --generate-notes \
+            --verify-tag

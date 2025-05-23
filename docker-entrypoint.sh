@@ -2,11 +2,13 @@
 set -euo pipefail
 
 # Validate required environment variables
-: "${METASTORE_DB_URL:?Missing METASTORE_DB_URL}"
 : "${METASTORE_DB_USER:?Missing METASTORE_DB_USER}"
 : "${METASTORE_DB_PASS:?Missing METASTORE_DB_PASS}"
 : "${METASTORE_DB_HOST:?Missing METASTORE_DB_HOST}"
 : "${METASTORE_DB_PORT:?Missing METASTORE_DB_PORT}"
+
+# Build Postgres ConnectionURL
+: "${METASTORE_DB_URL:=jdbc:postgresql://$METASTORE_DB_HOST}:${METASTORE_DB_PORT}/metastore_db}"
 
 # If no custom hive-site.xml is mounted, generate one
 if [ ! -f "$HIVE_HOME/conf/hive-site.xml" ]; then

@@ -99,8 +99,6 @@ jobs:
             -e METASTORE_DB_NAME=${{ env.POSTGRES_DB }} \
             -e METASTORE_DB_USER=${{ env.POSTGRES_USER }} \
             -e METASTORE_DB_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
-            -e HADOOP_HOME=/opt/hadoop \
-            -e PATH=/opt/hadoop/bin:/opt/hive/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
             ${{ env.REGISTRY_IMAGE }}:ci-test
 
@@ -218,8 +216,6 @@ jobs:
             -e METASTORE_DB_NAME=${{ env.POSTGRES_DB }} \
             -e METASTORE_DB_USER=${{ env.POSTGRES_USER }} \
             -e METASTORE_DB_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
-            -e HADOOP_HOME=/opt/hadoop \
-            -e PATH=/opt/hadoop/bin:/opt/hive/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} ${{ env.REGISTRY_IMAGE }}:${{ matrix.hive_version }}
           sleep 15
 

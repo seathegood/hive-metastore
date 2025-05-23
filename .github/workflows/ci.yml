@@ -20,11 +20,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
 
-      - name: Load environment variables
+      - name: Load environment from .env file
         run: |
-          set -o allexport
-          source .env || true
-          set +o allexport
+          echo "Loading env vars into GITHUB_ENV"
+          while IFS='=' read -r key value; do
+            if [[ ! "$key" =~ ^# && -n "$key" ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < .env
 
       - name: Validate required env vars
         run: |

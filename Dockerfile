@@ -1,4 +1,4 @@
-FROM eclipse-temurin@sha256:cf90d0de6e8202281c4a946865bcc920eea4fb13fc0a37023ec6d63c37c4e1c9
+FROM eclipse-temurin:21-jdk-alpine
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 

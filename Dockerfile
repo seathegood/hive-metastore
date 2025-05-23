@@ -30,8 +30,9 @@ LABEL \
   org.opencontainers.image.revision=${VCS_REF}
 
 # Install and configure all dependencies in a single layer
-RUN apt-get update && \
-    apt-get install -y wget netcat-openbsd ca-certificates jq && \
+RUN apk update && \
+    apk upgrade && \
+    apk add wget netcat-openbsd openssl ca-certificates jq && \
     mkdir -p $HIVE_HOME && \
     cd /tmp && \
     wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz && \

@@ -19,6 +19,16 @@ jobs:
           source .env
           set +o allexport
 
+      - name: Set up Docker with containerd
+        uses: docker/setup-docker@v2
+        with:
+          daemon-config: |
+            {
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -135,6 +145,16 @@ jobs:
           set -o allexport
           source .env
           set +o allexport
+
+      - name: Set up Docker with containerd
+        uses: docker/setup-docker-action@v4
+        with:
+          daemon-config: |
+            {
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

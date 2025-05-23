@@ -34,10 +34,13 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build \
+          docker buildx build \
+            --builder default \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new \
-            -t ${{ env.REGISTRY_IMAGE }}:ci-test .
+            -t ${{ env.REGISTRY_IMAGE }}:ci-test \
+            --load \
+            .
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
@@ -163,12 +166,16 @@ jobs:
 
       - name: Build image for Hive ${{ matrix.hive_version }}
         run: |
-          docker build \
+          docker buildx build \
+            --builder default \
             --build-arg HIVE_VERSION=${{ matrix.hive_version }} \
             --build-arg HIVE_TARBALL_SHA256=$(jq -r --arg v "${{ matrix.hive_version }}" '.hive[$v].sha256' versions.json) \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new \
-            -t ${{ env.REGISTRY_IMAGE }}:${{ matrix.hive_version }} .
+            -t ${{ env.REGISTRY_IMAGE }}:${{ matrix.hive_version }} \
+            --load \
+            .
+
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 

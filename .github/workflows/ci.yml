@@ -46,7 +46,7 @@ jobs:
           use: true
 
       - name: Cache Docker layers
-        uses: actions/cache@v4.0.0
+        uses: actions/cache@v4
         with:
           path: ${{ env.CACHE_DIR }}
           key: ${{ runner.os }}-buildx-${{ hashFiles('Dockerfile', 'versions.json') }}
@@ -177,7 +177,7 @@ jobs:
           use: true
 
       - name: Cache Docker layers
-        uses: actions/cache@v4.0.0
+        uses: actions/cache@v4
         with:
           path: ${{ env.CACHE_DIR }}
           key: ${{ runner.os }}-buildx-${{ matrix.hive_version }}-${{ hashFiles('Dockerfile', 'versions.json') }}

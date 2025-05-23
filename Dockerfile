@@ -60,11 +60,11 @@ RUN mkdir -p $HIVE_HOME && \
     mv /tmp/driver.jar /opt/hive/lib/postgresql-jdbc.jar && \
     rm -f /tmp/driver.jar && \
     wget -q https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
-    wget -q https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
-    sha512sum -c hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
+    wget -q https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz.sha256 && \
+    sha256sum -c hadoop-${HADOOP_VERSION}.tar.gz.sha256 && \
     tar -xzf hadoop-${HADOOP_VERSION}.tar.gz -C /opt && \
     mv /opt/hadoop-${HADOOP_VERSION} $HADOOP_HOME && \
-    rm -rf /tmp/hadoop-${HADOOP_VERSION}.tar.gz /tmp/hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
+    rm -rf /tmp/hadoop-${HADOOP_VERSION}.tar.gz /tmp/hadoop-${HADOOP_VERSION}.tar.gz.sha256 && \
     apk del wget netcat-openbsd && \
     rm -rf /var/cache/apk/* && \
     chmod -R go-rwx $HIVE_HOME && \

@@ -13,7 +13,7 @@ ARG HIVE_TARBALL_SHA256
 ENV HIVE_VERSION=${HIVE_VERSION} \
     HADOOP_VERSION=${HADOOP_VERSION} \
     HIVE_HOME=/opt/hive \
-    HADOOP_HOME=/opt/hadoop \
+    HADOOP_HOME=/opt/hadoop/hadoop \
     JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/urandom" \
     PG_JDBC_VERSION=42.7.5 \
     PATH="/opt/hadoop/bin:$PATH"

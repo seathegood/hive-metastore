@@ -1,18 +1,22 @@
 # Hive Metastore Docker Image (PostgreSQL Backend)
 
 
+
 ![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/seathegood/hive-metastore)
 ![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)
 [![CI](https://github.com/seathegood/hive-metastore/actions/workflows/ci.yml/badge.svg)](https://github.com/seathegood/hive-metastore/actions/workflows/ci.yml)
 [![Publish](https://github.com/seathegood/hive-metastore/actions/workflows/publish.yml/badge.svg)](https://github.com/seathegood/hive-metastore/actions/workflows/publish.yml)
 
+## Project Badges
+
+[![Docker Pulls](https://img.shields.io/docker/pulls/seathegood/hive-metastore.svg)](https://hub.docker.com/r/seathegood/hive-metastore)
+[![GitHub Stars](https://img.shields.io/github/stars/seathegood/hive-metastore.svg?style=social&label=Star)](https://github.com/seathegood/hive-metastore/stargazers)
+
 This is a minimal, hardened Docker image for running the [Apache Hive Metastore](https://hive.apache.org) backed by an external PostgreSQL database. Designed for use in containerized environments with an emphasis on security, observability, and compliance.
 
 ---
 
-## Features
-
-- Uses official Hive distribution (default: `3.1.3`)
+- Uses official Hive distribution (default: `4.0.1`)
 - External PostgreSQL support with auto-schema initialization
 - Healthcheck via port scan
 - Runs as non-root user
@@ -92,9 +96,9 @@ securityContext:
 ## Building Locally
 
 ```bash
-wget https://jdbc.postgresql.org/download/postgresql-42.7.3.jar -O postgresql-jdbc.jar
+wget https://jdbc.postgresql.org/download/postgresql-42.7.5.jar -O postgresql-jdbc.jar
 
-docker build -t hive-metastore:local --build-arg HIVE_VERSION=3.1.3 .
+docker build -t hive-metastore:local --build-arg HIVE_VERSION=4.0.1 .
 ```
 
 ---
@@ -106,6 +110,12 @@ This project uses GitHub Actions to build and publish multi-arch Docker images o
 - `ci.yml`: Validates builds and tests against PostgreSQL
 - `publish.yml`: Builds and pushes tagged releases to Docker Hub
 - `check-upstream.yml`: Monitors Apache Hive for new releases, updates the Dockerfile and versions.json, and creates a GitHub release which triggers `publish.yml`
+
+---
+
+## Contributing
+
+We welcome community contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for setup instructions, testing, CI details, and release guidance.
 
 ---
 

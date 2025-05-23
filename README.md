@@ -12,11 +12,11 @@ This is a minimal, hardened Docker image for running the [Apache Hive Metastore]
 
 ## Features
 
-- Uses official Hive distribution (default: `3.1.3`)
+- Uses official Hive distribution (default: `4.0.1`)
 - External PostgreSQL support with auto-schema initialization
 - Healthcheck via port scan
 - Runs as non-root user
-- Small image footprint using `openjdk:8-jdk-slim`
+- Small image footprint using `eclipse-temurin`
 - Production-hardened with:
   - minimal installed packages
   - locked-down file permissions

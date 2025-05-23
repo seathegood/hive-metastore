@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Validate required environment variables
 : "${METASTORE_DB_USER:?Missing METASTORE_DB_USER}"
-: "${METASTORE_DB_PASS:?Missing METASTORE_DB_PASS}"
+: "${METASTORE_DB_PASSWORD:?Missing METASTORE_DB_PASSWORD}"
 : "${METASTORE_DB_HOST:?Missing METASTORE_DB_HOST}"
 : "${METASTORE_DB_PORT:?Missing METASTORE_DB_PORT}"
 
@@ -29,7 +29,7 @@ if [ ! -f "$HIVE_HOME/conf/hive-site.xml" ]; then
   </property>
   <property>
     <name>javax.jdo.option.ConnectionPassword</name>
-    <value>${METASTORE_DB_PASS}</value>
+    <value>${METASTORE_DB_PASSWORD}</value>
   </property>
   <property>
     <name>datanucleus.schema.autoCreateAll</name>

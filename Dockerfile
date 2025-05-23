@@ -1,4 +1,4 @@
-FROM eclipse-temurin@sha256:a125aa56c71c24f2814c82cbe8309c8d3196c7525cef1d92e6ea31bdeff2e8fc
+FROM eclipse-temurin@sha256:cf90d0de6e8202281c4a946865bcc920eea4fb13fc0a37023ec6d63c37c4e1c9
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 

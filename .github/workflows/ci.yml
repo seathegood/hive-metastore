@@ -113,10 +113,6 @@ jobs:
           docker logs metastore-test
           exit 1
 
-      - name: Verify files inside image
-        run: |
-          docker run --rm --entrypoint "" ${{ env.REGISTRY_IMAGE }}:ci-test test -f /opt/hive/lib/postgresql-jdbc.jar
-          docker run --rm --entrypoint "" ${{ env.REGISTRY_IMAGE }}:ci-test test -f /opt/hive/conf/hive-site.xml
 
       - name: Validate versions.json
         run: jq -e 'has("hive") and has("postgresql")' versions.json

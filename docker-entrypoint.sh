@@ -20,7 +20,7 @@ export PATH="$HADOOP_HOME/bin:$PATH"
 # If no custom hive-site.xml is mounted, generate one
 if [ ! -f "$HIVE_HOME/conf/hive-site.xml" ]; then
   echo "Generating default hive-site.xml..."
-  cat <<EOF > $HIVE_HOME/conf/hive-site.xml
+  cat <<EOF > "$HIVE_HOME/conf/hive-site.xml"
 <configuration>
   <property>
     <name>javax.jdo.option.ConnectionURL</name>
@@ -62,12 +62,12 @@ until nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
 done
 
 # Initialize schema if needed
-if ! $HIVE_HOME/bin/schematool -dbType postgres -info &>/dev/null; then
+if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info &>/dev/null; then
   echo "Initializing Hive schema..."
-  $HIVE_HOME/bin/schematool -dbType postgres -initSchema
+  "$HIVE_HOME/bin/schematool" -dbType postgres -initSchema
 fi
 
 # Launch Hive Metastore with logging
 echo "Starting Hive Metastore..."
 exec >> /opt/hive/logs/metastore.log 2>&1
-exec $HIVE_HOME/bin/hive --service metastore
+exec "$HIVE_HOME/bin/hive" --service metastore

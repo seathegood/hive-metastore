@@ -71,10 +71,12 @@ RUN mkdir -p $HIVE_HOME && \
     chmod -R go-rwx $HIVE_HOME && \
     chmod -R go-rwx $HADOOP_HOME
 
-# Create non-root hive user
+# Create non-root hive user and set ownership
 RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \
     chown -R hive:hive $HIVE_HOME && \
-    chown -R hive:hive $HADOOP_HOME
+    chown -R hive:hive $HADOOP_HOME && \
+    mkdir -p /opt/hive/logs /opt/hive/tmp && \
+    chown -R hive:hive /opt/hive/logs /opt/hive/tmp
 
 # Copy custom entrypoint and healthcheck scripts
 COPY --chown=hive:hive docker-entrypoint.sh /usr/local/bin/

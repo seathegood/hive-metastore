@@ -144,6 +144,9 @@ jobs:
           path: artifacts/
   test-matrix:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -193,17 +196,18 @@ jobs:
       - name: Build Docker image
         run: |
           docker buildx build \
+            --platform ${{ matrix.platform }} \
             --load \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new \
-            -t ${{ env.REGISTRY_IMAGE }}:ci-test .
+            -t ${{ env.REGISTRY_IMAGE }}:ci-test-${{ matrix.platform }} .
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
       - name: Start PostgreSQL
         run: |
           docker run -d --network ${{ env.NETWORK_NAME }} \
-            --name pg-test-matrix \
+            --name pg-test-matrix-${{ matrix.platform }} \
             -e POSTGRES_DB=${{ env.POSTGRES_DB }} \
             -e POSTGRES_USER=${{ env.POSTGRES_USER }} \
             -e POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
@@ -213,46 +217,46 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
-            docker exec pg-test-matrix pg_isready -U ${{ env.POSTGRES_USER }} && exit 0 || sleep 3
+            docker exec pg-test-matrix-${{ matrix.platform }} pg_isready -U ${{ env.POSTGRES_USER }} && exit 0 || sleep 3
           done
-          docker logs pg-test-matrix
+          docker logs pg-test-matrix-${{ matrix.platform }}
           exit 1
 
       - name: Run Hive Metastore
         run: |
-          docker run -d --network ${{ env.NETWORK_NAME }} \
-            --name metastore-test-matrix \
-            -e METASTORE_DB_HOST=pg-test-matrix \
+          docker run -d --platform ${{ matrix.platform }} --network ${{ env.NETWORK_NAME }} \
+            --name metastore-test-matrix-${{ matrix.platform }} \
+            -e METASTORE_DB_HOST=pg-test-matrix-${{ matrix.platform }} \
             -e METASTORE_DB_PORT=${{ env.METASTORE_DB_PORT }} \
             -e METASTORE_DB_NAME=${{ env.POSTGRES_DB }} \
             -e METASTORE_DB_USER=${{ env.POSTGRES_USER }} \
             -e METASTORE_DB_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
-            ${{ env.REGISTRY_IMAGE }}:ci-test
+            ${{ env.REGISTRY_IMAGE }}:ci-test-${{ matrix.platform }}
 
       - name: Check health status
         run: |
           for i in {1..10}; do
-            health=$(docker inspect --format='{{.State.Health.Status}}' metastore-test-matrix)
+            health=$(docker inspect --format='{{.State.Health.Status}}' metastore-test-matrix-${{ matrix.platform }})
             if [ "$health" = "healthy" ]; then exit 0; fi
             sleep 5
           done
-          docker inspect metastore-test-matrix
-          docker logs metastore-test-matrix
+          docker inspect metastore-test-matrix-${{ matrix.platform }}
+          docker logs metastore-test-matrix-${{ matrix.platform }}
           exit 1
 
       - name: Clean up containers
         if: always()
         run: |
-          docker rm -f metastore-test-matrix || true
-          docker rm -f pg-test-matrix || true
+          docker rm -f metastore-test-matrix-${{ matrix.platform }} || true
+          docker rm -f pg-test-matrix-${{ matrix.platform }} || true
 
       - name: Save logs
         if: always()
         run: |
           mkdir -p artifacts
-          docker logs metastore-test-matrix 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/metastore-matrix.log || true
-          docker logs pg-test-matrix 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/postgres-matrix.log || true
+          docker logs metastore-test-matrix-${{ matrix.platform }} 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/metastore-matrix-${{ matrix.platform }}.log || true
+          docker logs pg-test-matrix-${{ matrix.platform }} 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/postgres-matrix-${{ matrix.platform }}.log || true
 
       - name: Upload logs
         if: always()

@@ -92,9 +92,7 @@ jobs:
         run: |
           docker run -d --network ${{ env.NETWORK_NAME }} \
             --name pg-test-matrix-${{ env.PLATFORM_TAG }} \
-            -e POSTGRES_DB=${{ env.POSTGRES_DB }} \
-            -e POSTGRES_USER=${{ env.POSTGRES_USER }} \
-            -e POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+            --env-file .env \
             -p ${{ env.METASTORE_DB_PORT }}:${{ env.METASTORE_DB_PORT }} \
             postgres:15
 
@@ -110,11 +108,7 @@ jobs:
         run: |
           docker run -d --platform ${{ matrix.platform }} --network ${{ env.NETWORK_NAME }} \
             --name metastore-test-matrix-${{ env.PLATFORM_TAG }} \
-            -e METASTORE_DB_HOST=pg-test-matrix-${{ env.PLATFORM_TAG }} \
-            -e METASTORE_DB_PORT=${{ env.METASTORE_DB_PORT }} \
-            -e METASTORE_DB_NAME=${{ env.POSTGRES_DB }} \
-            -e METASTORE_DB_USER=${{ env.POSTGRES_USER }} \
-            -e METASTORE_DB_PASSWORD=${{ env.POSTGRES_PASSWORD }} \
+            --env-file .env \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
             ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }}
 

@@ -81,7 +81,9 @@ RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \
 
 # Copy custom entrypoint and healthcheck scripts
 COPY --chown=hive:hive docker-entrypoint.sh /usr/local/bin/
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh
 COPY --chown=hive:hive healthcheck.sh /usr/local/bin/
+RUN sed -i 's/\r$//' /usr/local/bin/healthcheck.sh
 
 # Make scripts executable
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/healthcheck.sh

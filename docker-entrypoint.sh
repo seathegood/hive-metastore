@@ -40,6 +40,10 @@ if [ ! -f "$HIVE_HOME/conf/hive-site.xml" ]; then
     <name>datanucleus.schema.autoCreateAll</name>
     <value>true</value>
   </property>
+  <property>
+    <name>hive.metastore.uris</name>
+    <value>thrift://0.0.0.0:${METASTORE_PORT}</value>
+  </property>
 </configuration>
 EOF
 else

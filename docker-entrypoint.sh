@@ -7,8 +7,8 @@ export HADOOP_HOME=/opt/hadoop
 export PATH="$HADOOP_HOME/bin:$PATH"
 
 # Validate required environment variables
-: "${METASTORE_DB_USER:?Missing METASTORE_DB_USER}"
-: "${METASTORE_DB_PASSWORD:?Missing METASTORE_DB_PASSWORD}"
+: "${POSTGRES_USER:?Missing POSTGRES_USER}"
+: "${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD}"
 : "${METASTORE_DB_HOST:?Missing METASTORE_DB_HOST}"
 : "${METASTORE_DB_PORT:?Missing METASTORE_DB_PORT}"
 : "${METASTORE_PORT:?Missing METASTORE_PORT}"
@@ -31,11 +31,11 @@ if [ ! -f "$HIVE_HOME/conf/hive-site.xml" ]; then
   </property>
   <property>
     <name>javax.jdo.option.ConnectionUserName</name>
-    <value>${METASTORE_DB_USER}</value>
+    <value>${POSTGRES_USER}</value>
   </property>
   <property>
     <name>javax.jdo.option.ConnectionPassword</name>
-    <value>${METASTORE_DB_PASSWORD}</value>
+    <value>${POSTGRES_PASSWORD}</value>
   </property>
   <property>
     <name>datanucleus.schema.autoCreateAll</name>

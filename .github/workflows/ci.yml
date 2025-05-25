@@ -19,6 +19,8 @@ jobs:
     strategy:
       matrix:
         platform: [linux/amd64, linux/arm64]
+    env:
+      PLATFORM_TAG: ${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -58,9 +60,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.CACHE_DIR }}
-          key: buildx-${{ matrix.platform }}-${{ hashFiles('Dockerfile', 'versions.json') }}
+          key: buildx-${{ env.PLATFORM_TAG }}-${{ hashFiles('Dockerfile', 'versions.json') }}
           restore-keys: |
-            buildx-${{ matrix.platform }}-
+            buildx-${{ env.PLATFORM_TAG }}-
             buildx-
 
       - name: Create Docker network

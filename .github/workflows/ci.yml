@@ -200,7 +200,7 @@ jobs:
         run: |
           docker buildx build \
             --platform ${{ matrix.platform }} \
-            --output=type=docker,dest=./ci-test-${{ env.PLATFORM_TAG }}.tar \
+            --output=type=oci,dest=./ci-test-${{ env.PLATFORM_TAG }}.tar \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new \
             --tag ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }} \

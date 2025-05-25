@@ -72,5 +72,6 @@ fi
 
 # Launch Hive Metastore with logging
 echo "Starting Hive Metastore..."
+echo "Command: $HIVE_HOME/bin/hive --service metastore"
 exec >> /opt/hive/logs/metastore.log 2>&1
-exec "$HIVE_HOME/bin/hive" --service metastore
+exec "$HIVE_HOME/bin/hive" --service metastore 2>&1 | tee -a /opt/hive/logs/metastore.out

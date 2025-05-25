@@ -37,8 +37,6 @@ RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
       bash \
-      coreutils \
-      shadow \
       wget \
       netcat-openbsd \
       openssl \
@@ -52,7 +50,6 @@ RUN mkdir -p $HIVE_HOME && \
     sha256sum -c apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \
     tar -xzf apache-hive-${HIVE_VERSION}-bin.tar.gz -C /opt && \
     mv /opt/apache-hive-${HIVE_VERSION}-bin/* $HIVE_HOME && \
-    rm -rf /tmp/apache-hive-${HIVE_VERSION}-bin.tar.gz /tmp/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \
     PG_JDBC_SHA256=$(jq -r --arg ver "$PG_JDBC_VERSION" '.postgresql[$ver].sha256' /opt/versions.json) && \
     wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O /tmp/driver.jar && \
     echo "${PG_JDBC_SHA256}  /tmp/driver.jar" | sha256sum -c - && \
@@ -64,14 +61,16 @@ RUN mkdir -p $HIVE_HOME && \
     sha512sum -c hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
     tar -xzf hadoop-${HADOOP_VERSION}.tar.gz -C /opt && \
     mv /opt/hadoop-${HADOOP_VERSION} $HADOOP_HOME && \
-    rm -rf /tmp/hadoop-${HADOOP_VERSION}.tar.gz /tmp/hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
-    apk del wget && \
-    rm -rf /var/cache/apk/* && \
+    rm -f /tmp/apache-hive-${HIVE_VERSION}-bin.tar.gz /tmp/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 \
+    && rm -f /tmp/hadoop-${HADOOP_VERSION}.tar.gz /tmp/hadoop-${HADOOP_VERSION}.tar.gz.sha512 \
+    && apk del wget \
+    && rm -rf /var/cache/apk/* && \
     chmod -R go-rwx $HIVE_HOME && \
     chmod -R go-rwx $HADOOP_HOME
 
 # Create non-root hive user and set ownership
-RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \
+RUN addgroup -S hive && \
+    adduser -S -G hive hive && \
     chown -R hive:hive $HIVE_HOME && \
     chown -R hive:hive $HADOOP_HOME && \
     mkdir -p /opt/hive/logs /opt/hive/tmp && \
@@ -102,7 +101,7 @@ VOLUME ["/opt/hive/logs", "/opt/hive/tmp"]
 EXPOSE 9083
 
 # Set the entrypoint
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Define health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s \

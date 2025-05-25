@@ -36,7 +36,6 @@ LABEL \
 RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
-      bash \
       coreutils \
       shadow \
       wget \
@@ -44,8 +43,6 @@ RUN apk update && \
       openssl \
       ca-certificates \
       jq
-      
-SHELL ["/bin/bash", "-c"]
       
 RUN mkdir -p $HIVE_HOME && \
     cd /tmp && \
@@ -81,20 +78,12 @@ RUN groupadd -r hive && useradd --no-log-init -r -g hive hive && \
 
 ARG TARGETARCH
 COPY --chown=hive:hive docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN echo "$TARGETARCH" > /tmp/arch.txt && \
-    cat /tmp/arch.txt && \
-    sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && \
-    chmod +x /usr/local/bin/docker-entrypoint.sh && \
-    echo "First few lines:" && head -n 5 /usr/local/bin/docker-entrypoint.sh && \
-    echo "Byte content:" && cat -A /usr/local/bin/docker-entrypoint.sh | head -n 10
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
 COPY --chown=hive:hive healthcheck.sh /usr/local/bin/healthcheck.sh
-RUN echo "$TARGETARCH" > /tmp/arch-health.txt && \
-    cat /tmp/arch-health.txt && \
-    sed -i 's/\r$//' /usr/local/bin/healthcheck.sh && \
-    chmod +x /usr/local/bin/healthcheck.sh && \
-    echo "First few lines:" && head -n 5 /usr/local/bin/healthcheck.sh && \
-    echo "Byte content:" && cat -A /usr/local/bin/healthcheck.sh | head -n 10
+RUN sed -i 's/\r$//' /usr/local/bin/healthcheck.sh && \
+    chmod +x /usr/local/bin/healthcheck.sh
 
 # Make scripts executable
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/healthcheck.sh

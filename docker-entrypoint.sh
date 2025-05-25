@@ -1,8 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/sh
 set -euo pipefail
 
-
-alias nc=netcat
 
 # Set HADOOP_HOME for schematool
 export HADOOP_HOME=/opt/hadoop
@@ -52,9 +50,9 @@ fi
 echo "Waiting for PostgreSQL at ${METASTORE_DB_HOST}:${METASTORE_DB_PORT}..."
 timeout=60
 elapsed=0
-until nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
+until netcat -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
   sleep 5
-  elapsed=$((elapsed + 5))
+  elapsed=$(expr "$elapsed" + 5)
   if [ "$elapsed" -ge "$timeout" ]; then
     echo "Error: Timed out waiting for ${METASTORE_DB_HOST}:${METASTORE_DB_PORT}"
     exit 1
@@ -62,7 +60,7 @@ until nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
 done
 
 # Initialize schema if needed
-if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info &>/dev/null; then
+if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info >/dev/null 2>&1; then
   echo "Initializing Hive schema..."
   "$HIVE_HOME/bin/schematool" -dbType postgres -initSchema
 fi

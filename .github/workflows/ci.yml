@@ -34,6 +34,9 @@ jobs:
             fi
           done < .env
 
+      - name: Set METASTORE_DB_HOST dynamically
+        run: echo "METASTORE_DB_HOST=pg-test-matrix-${{ env.PLATFORM_TAG }}" >> $GITHUB_ENV
+
       - name: Override REGISTRY_IMAGE for CI use
         run: echo "REGISTRY_IMAGE=ci-local/hive-metastore" >> $GITHUB_ENV
 

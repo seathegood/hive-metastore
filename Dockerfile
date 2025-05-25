@@ -105,5 +105,5 @@ EXPOSE 9083
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Define health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s \
   CMD ["/usr/local/bin/healthcheck.sh"]

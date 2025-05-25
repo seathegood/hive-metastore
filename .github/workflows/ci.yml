@@ -118,11 +118,17 @@ jobs:
 
       - name: Check health status
         run: |
-          for i in {1..10}; do
+          echo "Checking health status of Hive Metastore on platform ${{ env.PLATFORM_TAG }}"
+          for i in {1..20}; do
             health=$(docker inspect --format='{{.State.Health.Status}}' metastore-test-matrix-${{ env.PLATFORM_TAG }})
-            if [ "$health" = "healthy" ]; then exit 0; fi
-            sleep 5
+            echo "Attempt $i: Health status is $health"
+            if [ "$health" = "healthy" ]; then
+              echo "Hive Metastore is healthy"
+              exit 0
+            fi
+            sleep 10
           done
+          echo "Health check failed after maximum retries. Dumping logs:"
           docker inspect metastore-test-matrix-${{ env.PLATFORM_TAG }}
           docker logs metastore-test-matrix-${{ env.PLATFORM_TAG }}
           exit 1

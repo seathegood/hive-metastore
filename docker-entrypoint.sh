@@ -50,7 +50,7 @@ fi
 echo "Waiting for PostgreSQL at ${METASTORE_DB_HOST}:${METASTORE_DB_PORT}..."
 timeout=60
 elapsed=0
-until netcat -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
+until nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
   sleep 5
   elapsed=$(expr "$elapsed" + 5)
   if [ "$elapsed" -ge "$timeout" ]; then

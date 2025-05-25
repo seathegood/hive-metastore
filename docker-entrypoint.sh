@@ -1,5 +1,5 @@
 #!/bin/sh
-set -euo pipefail
+set -eu
 
 
 # Set HADOOP_HOME for schematool
@@ -52,7 +52,7 @@ timeout=60
 elapsed=0
 until nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
   sleep 5
-  elapsed=$(expr "$elapsed" + 5)
+  elapsed=$((elapsed + 5))
   if [ "$elapsed" -ge "$timeout" ]; then
     echo "Error: Timed out waiting for ${METASTORE_DB_HOST}:${METASTORE_DB_PORT}"
     exit 1

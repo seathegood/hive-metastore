@@ -112,6 +112,7 @@ jobs:
           docker run -d --platform ${{ matrix.platform }} --network ${{ env.NETWORK_NAME }} \
             --name metastore-test-matrix-${{ env.PLATFORM_TAG }} \
             --env-file .env \
+            -e METASTORE_DB_HOST=${{ env.METASTORE_DB_HOST }} \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
             ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }}
 

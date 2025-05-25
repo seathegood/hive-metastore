@@ -36,6 +36,7 @@ LABEL \
 RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
+      bash \
       coreutils \
       shadow \
       wget \
@@ -64,7 +65,7 @@ RUN mkdir -p $HIVE_HOME && \
     tar -xzf hadoop-${HADOOP_VERSION}.tar.gz -C /opt && \
     mv /opt/hadoop-${HADOOP_VERSION} $HADOOP_HOME && \
     rm -rf /tmp/hadoop-${HADOOP_VERSION}.tar.gz /tmp/hadoop-${HADOOP_VERSION}.tar.gz.sha512 && \
-    apk del wget netcat-openbsd && \
+    apk del wget && \
     rm -rf /var/cache/apk/* && \
     chmod -R go-rwx $HIVE_HOME && \
     chmod -R go-rwx $HADOOP_HOME

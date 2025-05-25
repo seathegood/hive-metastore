@@ -5,6 +5,9 @@ command -v jq >/dev/null 2>&1 || { echo >&2 "jq is required but not installed.";
 [[ -f versions.json ]] || { echo >&2 "versions.json not found."; exit 1; }
 
 VERSION="${1:-4.0.1}"
+PLATFORM="${2:-linux/amd64}"
+NO_CACHE="${3:-}"
+
 SHA=$(jq -r --arg version "$VERSION" '.hive[$version].sha256' versions.json)
 
 if [[ "$SHA" == "null" || -z "$SHA" ]]; then
@@ -22,10 +25,13 @@ if [[ "$SHA" == "null" || -z "$SHA" ]]; then
   jq --arg v "$VERSION" --arg s "$SHA" '.hive[$v] = {sha256: $s}' versions.json > tmp.versions.json && mv tmp.versions.json versions.json
 fi
 
-docker build \
+docker buildx build \
+  --platform "$PLATFORM" \
   --build-arg HIVE_VERSION="$VERSION" \
   --build-arg HIVE_TARBALL_SHA256="$SHA" \
   --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
   --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
-  -t seathegood/hive-metastore:"$VERSION" \
+  ${NO_CACHE:+--no-cache} \
+  --load \
+  -t seathegood/hive-metastore:"$VERSION-${PLATFORM##*/}" \
   -t seathegood/hive-metastore:latest .

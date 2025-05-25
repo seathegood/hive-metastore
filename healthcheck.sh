@@ -1,4 +1,6 @@
 #!/bin/sh
+# shellcheck shell=sh
+# Normalize line endings and ensure executable permissions (handled in Dockerfile)
 set -eu
 
 HOST="${HIVE_METASTORE_HOST:-localhost}"

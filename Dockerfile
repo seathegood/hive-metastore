@@ -77,8 +77,9 @@ RUN addgroup -S hive && \
     chown -R hive:hive /opt/hive/logs /opt/hive/tmp
 
 ARG TARGETARCH
-COPY --chown=hive:hive docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && \
+COPY --chown=hive:hive docker-entrypoint.sh /usr/local/bin/docker-entrypoint-${TARGETARCH}.sh
+RUN mv /usr/local/bin/docker-entrypoint-${TARGETARCH}.sh /usr/local/bin/docker-entrypoint.sh && \
+    sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
 COPY --chown=hive:hive healthcheck.sh /usr/local/bin/healthcheck.sh

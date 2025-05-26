@@ -14,7 +14,7 @@ env:
   NETWORK_NAME: ci-net
 
 jobs:
-  test-matrix:
+  build-matrix:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -87,6 +87,52 @@ jobs:
             .
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Save Docker image to tarball
+        run: |
+          docker save ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }} -o hive-metastore-${{ env.PLATFORM_TAG }}.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hive-metastore-image-${{ env.PLATFORM_TAG }}
+          path: hive-metastore-${{ env.PLATFORM_TAG }}.tar
+
+  test-matrix:
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    env:
+      PLATFORM_TAG: ${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
+    steps:
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: hive-metastore-image-${{ env.PLATFORM_TAG }}
+          path: .
+
+      - name: Load Docker image
+        run: docker load -i hive-metastore-${{ env.PLATFORM_TAG }}.tar
+
+      - name: Load environment from .env file
+        run: |
+          echo "Loading env vars into GITHUB_ENV"
+          while IFS='=' read -r key value; do
+            if [[ ! "$key" =~ ^# && -n "$key" ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < .env
+
+      - name: Set METASTORE_DB_HOST dynamically
+        run: echo "METASTORE_DB_HOST=pg-test-matrix-${{ env.PLATFORM_TAG }}" >> $GITHUB_ENV
+
+      - name: Override REGISTRY_IMAGE for CI use
+        run: echo "REGISTRY_IMAGE=ci-local/hive-metastore" >> $GITHUB_ENV
+
+      - name: Create Docker network
+        run: docker network create ${{ env.NETWORK_NAME }}
 
       - name: Start PostgreSQL
         run: |

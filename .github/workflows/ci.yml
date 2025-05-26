@@ -24,8 +24,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
 
       - name: Load environment from .env file
         run: |
@@ -109,6 +107,9 @@ jobs:
     env:
       PLATFORM_TAG: ${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:

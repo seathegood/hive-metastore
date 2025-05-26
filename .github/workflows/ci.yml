@@ -83,6 +83,7 @@ jobs:
             --load \
             --cache-from=type=local,src=${{ env.CACHE_DIR }} \
             --cache-to=type=local,dest=${{ env.CACHE_DIR }}-new \
+            --build-arg PLATFORM_TAG=${{ env.PLATFORM_TAG }} \
             --tag ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }} \
             .
           rm -rf ${{ env.CACHE_DIR }}
@@ -168,7 +169,7 @@ jobs:
         run: |
           echo "Checking health status of Hive Metastore on platform ${{ env.PLATFORM_TAG }}"
           for i in {1..20}; do
-            health=$(docker inspect --format='{{.State.Health.Status}}' metastore-test-matrix-${{ env.PLATFORM_TAG }})
+            health=$(docker inspect --format='{{json .State.Health}}' metastore-test-matrix-${{ env.PLATFORM_TAG }} | jq -r '.Status')
             echo "Attempt $i: Health status is $health"
             if [ "$health" = "healthy" ]; then
               echo "Hive Metastore is healthy"

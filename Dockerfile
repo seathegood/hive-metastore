@@ -77,17 +77,15 @@ RUN addgroup -S hive && \
     chown -R hive:hive /opt/hive/logs /opt/hive/tmp
 
 ARG TARGETARCH
-COPY --chown=hive:hive docker-entrypoint.sh /usr/local/bin/docker-entrypoint-${TARGETARCH}.sh
+COPY --chmod=0755 --chown=hive:hive docker-entrypoint.sh /usr/local/bin/docker-entrypoint-${TARGETARCH}.sh
 RUN mv /usr/local/bin/docker-entrypoint-${TARGETARCH}.sh /usr/local/bin/docker-entrypoint.sh && \
     sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
-COPY --chown=hive:hive healthcheck.sh /usr/local/bin/healthcheck.sh
+COPY --chmod=0755 --chown=hive:hive healthcheck.sh /usr/local/bin/healthcheck.sh
 RUN sed -i 's/\r$//' /usr/local/bin/healthcheck.sh && \
     chmod +x /usr/local/bin/healthcheck.sh
 
-# Make scripts executable
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/healthcheck.sh
 
 # Set working directory
 WORKDIR $HIVE_HOME

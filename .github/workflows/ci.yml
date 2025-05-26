@@ -88,6 +88,17 @@ jobs:
           rm -rf ${{ env.CACHE_DIR }}
           mv ${{ env.CACHE_DIR }}-new ${{ env.CACHE_DIR }}
 
+      - name: Save built image to tarball
+        run: |
+          mkdir -p artifacts
+          docker save ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }} | gzip > artifacts/image-${{ env.PLATFORM_TAG }}.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-${{ env.PLATFORM_TAG }}
+          path: artifacts/image-${{ env.PLATFORM_TAG }}.tar.gz
+
   test-matrix:
     needs: build-matrix
     runs-on: ubuntu-latest
@@ -117,6 +128,16 @@ jobs:
 
       - name: Create Docker network
         run: docker network create ${{ env.NETWORK_NAME }}
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-${{ env.PLATFORM_TAG }}
+          path: artifacts/
+
+      - name: Load Docker image
+        run: |
+          gunzip -c artifacts/image-${{ env.PLATFORM_TAG }}.tar.gz | docker load
 
       - name: Start PostgreSQL
         run: |

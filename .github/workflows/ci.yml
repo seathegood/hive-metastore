@@ -76,27 +76,18 @@ jobs:
       - name: Create Docker network
         run: docker network create ${{ env.NETWORK_NAME }}
 
-      - name: Build Docker image
+      - name: Build and push Docker image
         run: |
           docker buildx build \
             --platform ${{ matrix.platform }} \
-            --output=type=docker \
+            --output=type=registry \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new \
             --tag ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }} \
+            --push \
             .
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-      - name: Save Docker image to tarball
-        run: |
-          docker save ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }} -o hive-metastore-${{ env.PLATFORM_TAG }}.tar
-
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hive-metastore-image-${{ env.PLATFORM_TAG }}
-          path: hive-metastore-${{ env.PLATFORM_TAG }}.tar
 
   test-matrix:
     needs: build-matrix
@@ -109,15 +100,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
-
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: hive-metastore-image-${{ env.PLATFORM_TAG }}
-          path: .
-
-      - name: Load Docker image
-        run: docker load -i hive-metastore-${{ env.PLATFORM_TAG }}.tar
 
       - name: Load environment from .env file
         run: |

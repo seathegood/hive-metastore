@@ -16,9 +16,11 @@ jobs:
     steps:
       - name: Load environment from .env file
         run: |
-          set -o allexport
-          source .env
-          set +o allexport
+          while IFS='=' read -r key value; do
+            if [[ ! "$key" =~ ^# && -n "$key" ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < .env
 
       - name: Prepare environment
         run: |

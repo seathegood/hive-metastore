@@ -167,6 +167,8 @@ jobs:
 
       - name: Check health status
         run: |
+          echo "Delaying to allow services to initialize..."
+          sleep 60
           echo "Checking health status of Hive Metastore on platform ${{ env.PLATFORM_TAG }}"
           for i in {1..20}; do
             health=$(docker inspect --format='{{json .State.Health}}' metastore-test-matrix-${{ env.PLATFORM_TAG }} | jq -r '.Status')

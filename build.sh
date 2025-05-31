@@ -7,6 +7,7 @@ command -v jq >/dev/null 2>&1 || { echo >&2 "jq is required but not installed.";
 VERSION="${1:-4.0.1}"
 PLATFORM="${2:-linux/amd64}"
 NO_CACHE="${3:-}"
+DEBUG="${4:-}"
 
 SHA=$(jq -r --arg version "$VERSION" '.hive[$version].sha256' versions.json)
 
@@ -31,7 +32,7 @@ docker buildx build \
   --build-arg HIVE_TARBALL_SHA256="$SHA" \
   --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
   --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
-  ${NO_CACHE:+--no-cache} \
-  --load \
+  ${DEBUG:+--output=type=docker} ${DEBUG:+"--progress=plain"} ${DEBUG:+"--no-cache"} ${DEBUG:+"--pull"} ${DEBUG:+"--build-arg"} ${DEBUG:+DEBUG=true} \
+  ${DEBUG:-"--load"} \
   -t seathegood/hive-metastore:"$VERSION-${PLATFORM##*/}" \
   -t seathegood/hive-metastore:latest .

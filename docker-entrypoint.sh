@@ -55,7 +55,8 @@ fi
 echo "Waiting for PostgreSQL at ${METASTORE_DB_HOST}:${METASTORE_DB_PORT}..."
 timeout=60
 elapsed=0
-until nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
+while ! nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
+  echo "  Still waiting... (${elapsed}s elapsed)"
   sleep 5
   elapsed=$((elapsed + 5))
   if [ "$elapsed" -ge "$timeout" ]; then
@@ -66,9 +67,16 @@ done
 
 # Initialize schema if needed
 if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info >/dev/null 2>&1; then
-  echo "Initializing Hive schema..."
+  echo "No schema detected. Initializing Hive schema..."
   "$HIVE_HOME/bin/schematool" -dbType postgres -initSchema
+else
+  echo "Hive schema already initialized."
 fi
+
+# Ensure logs directory exists and is writable
+mkdir -p /opt/hive/logs
+touch /opt/hive/logs/metastore.log /opt/hive/logs/metastore.out
+chown hive:hive /opt/hive/logs/*.log || true
 
 # Launch Hive Metastore with logging
 echo "Starting Hive Metastore..."

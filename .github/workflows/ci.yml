@@ -167,7 +167,17 @@ jobs:
 
       - name: Check health status
         run: |
-          echo "Delaying to allow services to initialize..."
+          echo "Waiting for container to start..."
+          for i in {1..30}; do
+            status=$(docker inspect --format='{{.State.Status}}' metastore-test-matrix-${{ env.PLATFORM_TAG }})
+            echo "Attempt $i: Container status is $status"
+            if [ "$status" = "running" ]; then
+              echo "Container is running, proceeding with health checks..."
+              break
+            fi
+            sleep 5
+          done
+          echo "Delaying additional 60 seconds for Hive initialization..."
           sleep 60
           echo "Checking health status of Hive Metastore on platform ${{ env.PLATFORM_TAG }}"
           for i in {1..20}; do

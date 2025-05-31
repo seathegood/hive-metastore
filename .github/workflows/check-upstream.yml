@@ -13,6 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -20,9 +23,13 @@ jobs:
 
       - name: Load environment from .env file
         run: |
-          set -o allexport
-          source .env
-          set +o allexport
+          if [ -f .env ]; then
+            set -o allexport
+            source .env
+            set +o allexport
+          else
+            echo ".env file not found. Using defaults or GitHub environment variables."
+          fi
 
       - name: Get latest Hive version
         id: hive
@@ -72,3 +79,15 @@ jobs:
             --title "Hive ${{ steps.hive.outputs.latest }}" \
             --generate-notes \
             --verify-tag
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Summary
+        if: steps.hive.outputs.latest != steps.current.outputs.current
+        run: |
+          echo "### Hive version update" >> $GITHUB_STEP_SUMMARY
+          echo "- Current: ${{ steps.current.outputs.current }}" >> $GITHUB_STEP_SUMMARY
+          echo "- New: ${{ steps.hive.outputs.latest }}" >> $GITHUB_STEP_SUMMARY

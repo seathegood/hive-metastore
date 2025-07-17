@@ -86,7 +86,18 @@ fi
 # Ensure log directories exist
 mkdir -p "$HIVE_HOME/logs" "$HIVE_HOME/tmp"
 
-# Launch Hive Metastore
-echo "Launching Hive Metastore on port $METASTORE_PORT..."
-exec "$HIVE_HOME/bin/hive" --service metastore
+# Handle SIGTERM/SIGINT
+cleanup() {
+  echo "Received termination signal. Stopping Hive Metastore..."
+  kill "$pid"
+  wait "$pid"
+  echo "Hive Metastore stopped."
+  exit 0
+}
+trap cleanup TERM INT
 
+# Start Hive Metastore in background
+echo "Launching Hive Metastore on port $METASTORE_PORT..."
+"$HIVE_HOME/bin/hive" --service metastore &
+pid=$!
+wait "$pid"

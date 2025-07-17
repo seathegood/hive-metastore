@@ -85,10 +85,8 @@ fi
 
 # Ensure log directories exist
 mkdir -p "$HIVE_HOME/logs" "$HIVE_HOME/tmp"
-touch "$HIVE_HOME/logs/metastore.log" "$HIVE_HOME/logs/metastore.out"
-chown hive:hive "$HIVE_HOME/logs"/*.log || true
 
 # Launch Hive Metastore
-echo "Launching Hive Metastore..."
-exec >> "$HIVE_HOME/logs/metastore.log" 2>&1
-exec "$HIVE_HOME/bin/hive" --service metastore 2>&1 | tee -a "$HIVE_HOME/logs/metastore.out"
+echo "Launching Hive Metastore on port $METASTORE_PORT..."
+exec "$HIVE_HOME/bin/hive" --service metastore
+

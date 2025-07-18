@@ -77,8 +77,7 @@ RUN addgroup -S hive && \
       $HIVE_HOME/conf \
       $HADOOP_HOME \
       $HIVE_HOME/logs \
-      $HIVE_HOME/tmp && \
-    chown -R hive:hive $HIVE_HOME $HADOOP_HOME
+      $HIVE_HOME/tmp
 
 # Copy validated binaries and configs from builder stage
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/ $HIVE_HOME/
@@ -86,7 +85,8 @@ COPY --from=builder /build/hadoop-${HADOOP_VERSION}/ $HADOOP_HOME/
 COPY --from=builder /build/postgresql-jdbc.jar $HIVE_HOME/lib/postgresql-jdbc.jar
 
 # Secure permissions
-RUN chmod -R go-rwx $HIVE_HOME $HADOOP_HOME
+RUN chown -R hive:hive $HIVE_HOME $HADOOP_HOME && \
+    chmod -R go-rwx $HIVE_HOME $HADOOP_HOME
 
 # Entry scripts and healthcheck
 ARG TARGETARCH

@@ -26,6 +26,9 @@ echo "Metastore Port:  $METASTORE_PORT"
 echo "DB Host:         $METASTORE_DB_HOST"
 echo "JDBC URL:        $METASTORE_DB_URL"
 
+# Ensure log directories exist
+mkdir -p "$HIVE_HOME/logs" "$HIVE_HOME/tmp" "$HIVE_CONF_DIR"
+
 # If no custom hive-site.xml is mounted, generate one
 if [ ! -f "$HIVE_CONF_DIR/hive-site.xml" ]; then
   echo "Generating default hive-site.xml..."
@@ -82,9 +85,6 @@ if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info >/dev/null 2>&1; then
 else
   echo "Hive schema already initialized."
 fi
-
-# Ensure log directories exist
-mkdir -p "$HIVE_HOME/logs" "$HIVE_HOME/tmp"
 
 # Handle SIGTERM/SIGINT
 cleanup() {

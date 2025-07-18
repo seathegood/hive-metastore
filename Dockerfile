@@ -36,8 +36,6 @@ RUN PG_JDBC_SHA256=$(jq -r --arg ver "${PG_JDBC_VERSION}" '.postgresql[$ver].sha
     wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O postgresql-jdbc.jar && \
     echo "${PG_JDBC_SHA256}  postgresql-jdbc.jar" | sha256sum -c -
 
----
-
 # Stage 2: Runtime - minimal and secure image
 FROM eclipse-temurin:21-jdk-alpine AS runtime
 

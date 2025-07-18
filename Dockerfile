@@ -72,8 +72,13 @@ RUN apk update && apk add --no-cache \
 # Create non-root user and working directories
 RUN addgroup -S hive && \
     adduser -S -G hive hive && \
-    mkdir -p $HIVE_HOME $HADOOP_HOME /opt/hive/logs /opt/hive/tmp && \
-    chown -R hive:hive $HIVE_HOME $HADOOP_HOME /opt/hive/logs /opt/hive/tmp
+    mkdir -p \
+      $HIVE_HOME \
+      $HIVE_HOME/conf \
+      $HADOOP_HOME \
+      $HIVE_HOME/logs \
+      $HIVE_HOME/tmp && \
+    chown -R hive:hive $HIVE_HOME $HADOOP_HOME
 
 # Copy validated binaries and configs from builder stage
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/ $HIVE_HOME/

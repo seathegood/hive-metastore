@@ -28,17 +28,11 @@ jobs:
       - name: Load environment from .env file
         run: |
           echo "Loading env vars into GITHUB_ENV"
-          while IFS='=' read -r key value; do
-            if [[ ! "$key" =~ ^# && -n "$key" ]]; then
-              echo "$key=$value" >> $GITHUB_ENV
-            fi
-          done < .env
+          export $(grep -v '^#' .env | xargs)
 
       - name: Set METASTORE_DB_HOST dynamically
         run: echo "METASTORE_DB_HOST=pg-test-matrix-${{ env.PLATFORM_TAG }}" >> $GITHUB_ENV
 
-      - name: Override REGISTRY_IMAGE for CI use
-        run: echo "REGISTRY_IMAGE=ci-local/hive-metastore" >> $GITHUB_ENV
 
       - name: Set up Docker with containerd
         uses: docker/setup-docker-action@v4.0.0
@@ -84,7 +78,7 @@ jobs:
             --cache-from=type=local,src=${{ env.CACHE_DIR }} \
             --cache-to=type=local,dest=${{ env.CACHE_DIR }}-new \
             --build-arg PLATFORM_TAG=${{ env.PLATFORM_TAG }} \
-            --tag ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }} \
+            --tag ci-local/hive-metastore:ci-test-${{ env.PLATFORM_TAG }} \
             .
           rm -rf ${{ env.CACHE_DIR }}
           mv ${{ env.CACHE_DIR }}-new ${{ env.CACHE_DIR }}
@@ -112,7 +106,7 @@ jobs:
             --env-file .env \
             -e METASTORE_DB_HOST=${{ env.METASTORE_DB_HOST }} \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
-            ${{ env.REGISTRY_IMAGE }}:ci-test-${{ env.PLATFORM_TAG }}
+            ci-local/hive-metastore:ci-test-${{ env.PLATFORM_TAG }}
 
       - name: Check health status
         run: |

@@ -11,6 +11,8 @@ __pycache__/
 .DS_Store
 tmp/
 node_modules/
+downloads/
+.buildx-cache/
 
 # Ignore local configs and docs
 README.md

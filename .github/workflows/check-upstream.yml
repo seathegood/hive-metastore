@@ -8,6 +8,10 @@ on:
 jobs:
   check-hive-version:
     runs-on: ubuntu-latest
+    env:
+      DOCKERFILE_PATH: Dockerfile
+      VERSION_FILE: versions.json
+      HIVE_DOWNLOAD_BASE: https://dlcdn.apache.org/hive
 
     steps:
       - name: Checkout code
@@ -20,16 +24,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
-
-      - name: Load environment from .env file
-        run: |
-          if [ -f .env ]; then
-            set -o allexport
-            source .env
-            set +o allexport
-          else
-            echo ".env file not found. Using defaults or GitHub environment variables."
-          fi
 
       - name: Get latest Hive version
         id: hive

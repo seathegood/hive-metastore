@@ -1,0 +1,27 @@
+
+
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Docker
+.buildx-cache/
+downloads/
+*.tar
+*.tar.gz
+*.log
+
+# Node modules (if applicable)
+node_modules/
+
+# Python virtual environments (if applicable)
+venv/
+.venv/
+
+# VSCode settings
+.vscode/

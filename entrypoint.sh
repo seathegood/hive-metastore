@@ -5,6 +5,8 @@ echo "Starting Hive Metastore container..."
 
 # Set required defaults and paths
 export HADOOP_HOME=${HADOOP_HOME:-/opt/hadoop}
+export HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-$HADOOP_HOME/conf}
+export HADOOP_HDFS_HOME=${HADOOP_HDFS_HOME:-/opt/hadoop}
 export HIVE_HOME=${HIVE_HOME:-/opt/hive}
 export HIVE_CONF_DIR=${HIVE_CONF_DIR:-$HIVE_HOME/conf}
 export PATH="$HADOOP_HOME/bin:$PATH"
@@ -25,6 +27,19 @@ echo "Hive Config:     $HIVE_CONF_DIR"
 echo "Metastore Port:  $METASTORE_PORT"
 echo "DB Host:         $METASTORE_DB_HOST"
 echo "JDBC URL:        $METASTORE_DB_URL"
+
+
+echo "Listing Hive libraries:"
+find "$HIVE_HOME/lib" -type f -name "*.jar" | sort
+
+echo "Listing Hadoop libraries:"
+find "$HADOOP_HOME" -type f -name "*.jar" | sort
+
+echo "Listing Hadoop config files:"
+find "$HADOOP_CONF_DIR" -type f | sort
+
+echo "Listing Hadoop bin scripts:"
+find "$HADOOP_HOME/bin" -type f | sort
 
 # Ensure log directories exist
 mkdir -p "$HIVE_HOME/logs" "$HIVE_HOME/tmp" "$HIVE_CONF_DIR"
@@ -79,9 +94,13 @@ while ! nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
 done
 
 # Initialize schema if not already present
-if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info >/dev/null 2>&1; then
+if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info --verbose | grep -q 'Metastore schema version:'; then
   echo "No schema detected. Initializing Hive schema..."
-  "$HIVE_HOME/bin/schematool" -dbType postgres -initSchema
+  HADOOP_CLASSPATH=$(find "$HADOOP_HOME" "$HIVE_HOME/lib" -name '*.jar' | tr '\n' ':' | sed 's/:$//')
+  echo "HADOOP_CLASSPATH set to:"
+  echo "$HADOOP_CLASSPATH" | tr ':' '\n'
+  export HADOOP_CLASSPATH
+  "$HIVE_HOME/bin/schematool" -dbType postgres -initSchemaTo 4.0.0 --verbose
 else
   echo "Hive schema already initialized."
 fi

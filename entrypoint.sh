@@ -105,6 +105,18 @@ else
   echo "Hive schema already initialized."
 fi
 
+#
+# Generate minimal log4j.properties if not present
+if [ ! -f "$HADOOP_CONF_DIR/log4j.properties" ]; then
+  echo "Generating default log4j.properties..."
+  cat <<EOF > "$HADOOP_CONF_DIR/log4j.properties"
+log4j.rootLogger=INFO, console
+log4j.appender.console=org.apache.log4j.ConsoleAppender
+log4j.appender.console.layout=org.apache.log4j.PatternLayout
+log4j.appender.console.layout.ConversionPattern=%d{ISO8601} %-5p %c: %m%n
+EOF
+fi
+
 # Handle SIGTERM/SIGINT
 cleanup() {
   echo "Received termination signal. Stopping Hive Metastore..."
@@ -115,6 +127,7 @@ cleanup() {
 }
 trap cleanup TERM INT
 
+#
 # Start Hive Metastore in background
 echo "Launching Hive Metastore on port $METASTORE_PORT..."
 "$HIVE_HOME/bin/hive" --service metastore &

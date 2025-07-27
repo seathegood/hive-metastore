@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${METASTORE_DB}
+      POSTGRES_USER: ${METASTORE_DB_USER}
+      POSTGRES_PASSWORD: ${METASTORE_DB_PASSWORD}
     ports:
       - "${METASTORE_DB_PORT:-5432}:5432"
     healthcheck:
@@ -16,10 +16,10 @@ services:
   hive-metastore:
     image: seathegood/hive-metastore:latest
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      METASTORE_DB_HOST: postgres
+      METASTORE_DB: ${METASTORE_DB}
+      METASTORE_DB_USER: ${METASTORE_DB_USER}
+      METASTORE_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      METASTORE_DB_HOST: ${METASTORE_DB_HOST}
       METASTORE_DB_PORT: ${METASTORE_DB_PORT}
       METASTORE_PORT: ${METASTORE_PORT}
     depends_on:

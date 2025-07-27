@@ -12,20 +12,20 @@ export HIVE_CONF_DIR=${HIVE_CONF_DIR:-$HIVE_HOME/conf}
 export PATH="$HADOOP_HOME/bin:$PATH"
 
 # Validate required environment variables
-: "${POSTGRES_USER:?Missing POSTGRES_USER}"
-: "${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD}"
+: "${METASTORE_DB_USER:?Missing METASTORE_DB_USER}"
+: "${METASTORE_DB_PASSWORD:?Missing METASTORE_DB_PASSWORD}"
 : "${METASTORE_DB_HOST:?Missing METASTORE_DB_HOST}"
+: "${METASTORE_DB:?Missing METASTORE_DB}"
 : "${METASTORE_DB_PORT:?Missing METASTORE_DB_PORT}"
 : "${METASTORE_PORT:?Missing METASTORE_PORT}"
 
 # Compose JDBC connection string
-: "${METASTORE_DB_URL:=jdbc:postgresql://${METASTORE_DB_HOST}:${METASTORE_DB_PORT}/metastore_db}"
+: "${METASTORE_DB_URL:=jdbc:postgresql://${METASTORE_DB_HOST}:${METASTORE_DB_PORT}/${METASTORE_DB}}"
 
 # Log config
 echo "Hive Home:       $HIVE_HOME"
 echo "Hive Config:     $HIVE_CONF_DIR"
 echo "Metastore Port:  $METASTORE_PORT"
-echo "DB Host:         $METASTORE_DB_HOST"
 echo "JDBC URL:        $METASTORE_DB_URL"
 
 
@@ -59,11 +59,11 @@ if [ ! -f "$HIVE_CONF_DIR/hive-site.xml" ]; then
   </property>
   <property>
     <name>javax.jdo.option.ConnectionUserName</name>
-    <value>${POSTGRES_USER}</value>
+    <value>${METASTORE_DB_USER}</value>
   </property>
   <property>
     <name>javax.jdo.option.ConnectionPassword</name>
-    <value>${POSTGRES_PASSWORD}</value>
+    <value>${METASTORE_DB_PASSWORD}</value>
   </property>
   <property>
     <name>datanucleus.schema.autoCreateAll</name>

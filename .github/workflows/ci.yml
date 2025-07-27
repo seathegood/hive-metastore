@@ -94,7 +94,7 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
-            docker exec pg-test-matrix-${{ env.PLATFORM_TAG }} pg_isready -U ${{ env.POSTGRES_USER }} && exit 0 || sleep 3
+            docker exec pg-test-matrix-${{ env.PLATFORM_TAG }} pg_isready -U ${{ env.METASTORE_DB_USER }} && exit 0 || sleep 3
           done
           docker logs pg-test-matrix-${{ env.PLATFORM_TAG }}
           exit 1

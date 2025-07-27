@@ -1,9 +1,10 @@
 # Stage 1: Builder - fetch and validate Hive, Hadoop, and JDBC
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
-ARG HIVE_VERSION=4.0.1
 ARG HADOOP_VERSION=3.4.1
+ARG HIVE_VERSION=4.0.1
 ARG PG_JDBC_VERSION=42.7.5
+ARG SLF4J_VERSION=1.7.30
 
 ENV HIVE_HOME=/opt/hive \
     HADOOP_HOME=/opt/hadoop
@@ -39,16 +40,19 @@ RUN PG_JDBC_SHA256=$(jq -r --arg ver "${PG_JDBC_VERSION}" '.postgresql[$ver].sha
     wget -q https://jdbc.postgresql.org/download/postgresql-${PG_JDBC_VERSION}.jar -O postgresql-jdbc.jar && \
     echo "${PG_JDBC_SHA256}  postgresql-jdbc.jar" | sha256sum -c -
 
-ARG SLF4J_VERSION=1.7.30
+#Download missing SLF4J API Library 
 RUN wget -q https://repo1.maven.org/maven2/org/slf4j/slf4j-api/${SLF4J_VERSION}/slf4j-api-${SLF4J_VERSION}.jar
 
 # Stage 2: Runtime - minimal and secure image
 FROM eclipse-temurin:21-jdk-alpine AS runtime
 
-ARG HIVE_VERSION=4.0.1
 ARG HADOOP_VERSION=3.4.1
+ARG HIVE_VERSION=4.0.1
 ARG PG_JDBC_VERSION=42.7.5
+ARG SLF4J_VERSION=1.7.30
+
 ARG BUILD_DATE
+ARG TARGETARCH
 ARG VCS_REF
 
 ENV HIVE_VERSION=${HIVE_VERSION} \
@@ -91,75 +95,85 @@ RUN addgroup -S hive && \
       $HIVE_HOME/tmp
 
 # Copy only required Hive Metastore JARs, minimal Hadoop libs, and configs from builder stage
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-service-rpc-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-exec-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-metastore-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/guava-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-beeline-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-cli-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-common-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-serde-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-service-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-standalone-metastore-server-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-shims-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-llap-client-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-llap-server-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-exec-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-hcatalog-core-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-hcatalog-server-extensions-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/super-csv-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jackson-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jline-2.14.6.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-beeline-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-jdbc-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-cli-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-llap-client-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-llap-server-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-metastore-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-serde-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-service-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-service-rpc-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-shims-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-standalone-metastore-server-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-storage-api-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jackson-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jline-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/libfb303-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/metrics-core-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/guava-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/super-csv-*.jar $HIVE_HOME/lib/
+
 # Commons libraries
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-io-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-dbcp2-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-io-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-pool2-*.jar $HIVE_HOME/lib/
+
 # SLF4J API
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/slf4j-api-*.jar $HIVE_HOME/lib/
+
 # DataNucleus JARs
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/datanucleus-*.jar $HIVE_HOME/lib/
+
 # Added Jetty libraries
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-http-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-io-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-security-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-server-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-util-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-http-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-io-*.jar $HIVE_HOME/lib/
+
 # Jetty and servlet libraries
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-servlet-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/javax.servlet-api-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-servlet-*.jar $HIVE_HOME/lib/
+
 # HikariCP library
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/HikariCP-*.jar $HIVE_HOME/lib/
+
 # Caffeine caching library
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/caffeine-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/gson-*.jar $HIVE_HOME/lib/
+
 # Ensure SLF4J_VERSION is defined in the runtime stage for the following COPY
-ARG SLF4J_VERSION=1.7.30
 COPY --from=builder /build/slf4j-api-${SLF4J_VERSION}.jar $HIVE_HOME/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-shaded-guava-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/woodstox-core-*.jar $HADOOP_HOME/lib/
+
 # Copy required SLF4J and Log4j JARs
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/log4j-*.jar $HIVE_HOME/lib/
+
 # Apache HttpComponents for org.apache.http.config.Lookup
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/http*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-cli-*.jar $HIVE_HOME/lib/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/commons-configuration2-*.jar $HADOOP_HOME/lib/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/commons-collections-*.jar $HADOOP_HOME/lib/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-shaded-guava-*.jar $HADOOP_HOME/lib/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/hadoop-common-*.jar $HADOOP_HOME/lib/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-auth-*.jar $HADOOP_HOME/lib/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/etc/hadoop/core-site.xml $HADOOP_HOME/etc/hadoop/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/bin/hadoop $HADOOP_HOME/bin/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/libexec/ $HADOOP_HOME/libexec/
-COPY --from=builder /build/postgresql-jdbc.jar $HIVE_HOME/lib/postgresql-jdbc.jar
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/schematool $HIVE_HOME/bin/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/ext/ $HIVE_HOME/bin/ext/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/hive $HIVE_HOME/bin/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/hive-config.sh $HIVE_HOME/bin/
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/ext/ $HIVE_HOME/bin/ext/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/schematool $HIVE_HOME/bin/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-cli-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/http*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/scripts $HIVE_HOME/scripts
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/bin/hadoop $HADOOP_HOME/bin/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/etc/hadoop/core-site.xml $HADOOP_HOME/etc/hadoop/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/libexec/ $HADOOP_HOME/libexec/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/hadoop-common-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/commons-collections-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/commons-configuration2-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-auth-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-shaded-guava-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/postgresql-jdbc.jar $HIVE_HOME/lib/postgresql-jdbc.jar
 
+# Stax Libraries
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/stax2-api-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/yarn/lib/stax-ex-*.jar $HADOOP_HOME/lib/
 
@@ -168,7 +182,6 @@ RUN chown -R hive:hive $HIVE_HOME $HADOOP_HOME && \
     chmod -R go-rwx $HIVE_HOME $HADOOP_HOME
 
 # Entry scripts and healthcheck
-ARG TARGETARCH
 COPY --chmod=0755 --chown=hive:hive entrypoint.sh /usr/local/bin/entrypoint-${TARGETARCH}.sh
 RUN mv /usr/local/bin/entrypoint-${TARGETARCH}.sh /usr/local/bin/entrypoint.sh && \
     sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && \

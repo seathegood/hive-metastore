@@ -8,7 +8,7 @@ services:
     ports:
       - "${METASTORE_DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -18,7 +18,7 @@ services:
     environment:
       METASTORE_DB: ${METASTORE_DB}
       METASTORE_DB_USER: ${METASTORE_DB_USER}
-      METASTORE_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      METASTORE_DB_PASSWORD: ${METASTORE_DB_PASSWORD}
       METASTORE_DB_HOST: ${METASTORE_DB_HOST}
       METASTORE_DB_PORT: ${METASTORE_DB_PORT}
       METASTORE_PORT: ${METASTORE_PORT}

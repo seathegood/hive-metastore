@@ -109,6 +109,7 @@ jobs:
             --name metastore-test-matrix-${{ env.PLATFORM_TAG }} \
             --env-file .env \
             -e METASTORE_DB_HOST=${{ env.METASTORE_DB_HOST }} \
+            --health-start-period=180s \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
             ci-local/hive-metastore:ci-test-${{ env.PLATFORM_TAG }}
 
@@ -124,8 +125,8 @@ jobs:
             fi
             sleep 5
           done
-          echo "Delaying additional 180 seconds for Hive initialization..."
-          sleep 180
+          echo "Delaying additional 120 seconds for Hive initialization..."
+          sleep 120
           echo "Checking health status of Hive Metastore on platform ${{ env.PLATFORM_TAG }}"
           for i in {1..20}; do
             health=$(docker inspect --format='{{json .State.Health}}' metastore-test-matrix-${{ env.PLATFORM_TAG }} | jq -r '.Status')

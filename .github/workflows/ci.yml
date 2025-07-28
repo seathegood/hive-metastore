@@ -124,8 +124,8 @@ jobs:
             fi
             sleep 5
           done
-          echo "Delaying additional 60 seconds for Hive initialization..."
-          sleep 60
+          echo "Delaying additional 180 seconds for Hive initialization..."
+          sleep 180
           echo "Checking health status of Hive Metastore on platform ${{ env.PLATFORM_TAG }}"
           for i in {1..20}; do
             health=$(docker inspect --format='{{json .State.Health}}' metastore-test-matrix-${{ env.PLATFORM_TAG }} | jq -r '.Status')

@@ -126,8 +126,14 @@ COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-pool2-*.j
 # SLF4J API
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/slf4j-api-*.jar $HIVE_HOME/lib/
 
+
 # DataNucleus JARs
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/datanucleus-*.jar $HIVE_HOME/lib/
+
+# Curator JARs
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/curator-client-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/curator-framework-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/curator-recipes-*.jar $HIVE_HOME/lib/
 
 # Added Jetty libraries
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-http-*.jar $HIVE_HOME/lib/
@@ -157,6 +163,7 @@ COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/log4j-*.jar $HIVE
 
 # Apache HttpComponents for org.apache.http.config.Lookup
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/ext/ $HIVE_HOME/bin/ext/
+RUN ln -s $HIVE_HOME/bin/ext/beeline.sh $HIVE_HOME/bin/beeline
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/hive $HIVE_HOME/bin/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/hive-config.sh $HIVE_HOME/bin/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/schematool $HIVE_HOME/bin/
@@ -167,6 +174,8 @@ COPY --from=builder /build/hadoop-${HADOOP_VERSION}/bin/hadoop $HADOOP_HOME/bin/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/etc/hadoop/core-site.xml $HADOOP_HOME/etc/hadoop/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/libexec/ $HADOOP_HOME/libexec/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/hadoop-common-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/ $HADOOP_HOME/share/hadoop/common/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/ $HADOOP_HOME/share/hadoop/common/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/commons-collections-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/commons-configuration2-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-auth-*.jar $HADOOP_HOME/lib/

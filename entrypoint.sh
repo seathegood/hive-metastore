@@ -94,7 +94,8 @@ while ! nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
 done
 
 # Initialize schema if not already present
-if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info --verbose | grep -q 'Metastore schema version:'; then
+echo "Checking for existing Hive schema..."
+if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info --verbose 2>&1 | grep -q 'Metastore schema version:'; then
   echo "No schema detected. Initializing Hive schema..."
   HADOOP_CLASSPATH=$(find "$HADOOP_HOME" "$HIVE_HOME/lib" -name '*.jar' | tr '\n' ':' | sed 's/:$//')
   echo "HADOOP_CLASSPATH set to:"

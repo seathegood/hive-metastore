@@ -79,6 +79,7 @@ LABEL org.opencontainers.image.vendor="Sea the Good, LLC" \
       org.opencontainers.image.created=${BUILD_DATE} \
       org.opencontainers.image.revision=${VCS_REF}
 
+# Install Prerequisites
 RUN apk update && apk add --no-cache \
     bash \
     netcat-openbsd \
@@ -123,47 +124,39 @@ COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-dbcp2-*.j
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-io-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/commons-pool2-*.jar $HIVE_HOME/lib/
 
-# SLF4J API
+# SLF4J and LOG4J libraries
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/slf4j-api-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/slf4j-api-${SLF4J_VERSION}.jar $HIVE_HOME/lib/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-shaded-guava-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/woodstox-core-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/log4j-*.jar $HIVE_HOME/lib/
 
-
-# DataNucleus JARs
+# DataNucleus libraries
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/datanucleus-*.jar $HIVE_HOME/lib/
 
-# Curator JARs
+# Curator libraries
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/curator-client-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/curator-framework-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/curator-recipes-*.jar $HIVE_HOME/lib/
 
-# Added Jetty libraries
+# Jetty and servlet libraries
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-http-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-io-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-security-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-server-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-util-*.jar $HIVE_HOME/lib/
-
-# Jetty and servlet libraries
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/javax.servlet-api-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/jetty-servlet-*.jar $HIVE_HOME/lib/
 
 # HikariCP library
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/HikariCP-*.jar $HIVE_HOME/lib/
 
-# Caffeine caching library
+# Caffeine caching libraries
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/caffeine-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/gson-*.jar $HIVE_HOME/lib/
 
-# Ensure SLF4J_VERSION is defined in the runtime stage for the following COPY
-COPY --from=builder /build/slf4j-api-${SLF4J_VERSION}.jar $HIVE_HOME/lib/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-shaded-guava-*.jar $HADOOP_HOME/lib/
-COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/woodstox-core-*.jar $HADOOP_HOME/lib/
-
-# Copy required SLF4J and Log4j JARs
-COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/log4j-*.jar $HIVE_HOME/lib/
-
 # Apache HttpComponents for org.apache.http.config.Lookup
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/ext/ $HIVE_HOME/bin/ext/
-RUN ln -s $HIVE_HOME/bin/ext/beeline.sh $HIVE_HOME/bin/beeline
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/hive $HIVE_HOME/bin/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/hive-config.sh $HIVE_HOME/bin/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/schematool $HIVE_HOME/bin/
@@ -207,5 +200,5 @@ VOLUME ["/opt/hive/logs", "/opt/hive/tmp"]
 EXPOSE 9083
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-HEALTHCHECK --interval=30s --timeout=10s --start-period=360s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
   CMD /usr/local/bin/healthcheck.sh

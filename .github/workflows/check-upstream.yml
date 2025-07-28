@@ -12,6 +12,8 @@ jobs:
       DOCKERFILE_PATH: Dockerfile
       VERSION_FILE: versions.json
       HIVE_DOWNLOAD_BASE: https://dlcdn.apache.org/hive
+      GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
+      GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
 
     steps:
       - name: Checkout code

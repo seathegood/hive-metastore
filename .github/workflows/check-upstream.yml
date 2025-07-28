@@ -31,7 +31,9 @@ jobs:
         id: current
         run: |
           current=$(grep -oP 'ARG HIVE_VERSION=\K[0-9.]+' $DOCKERFILE_PATH)
-          echo "current=${current}" >> "$GITHUB_OUTPUT"
+          echo "current<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$current" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Compare versions
         if: steps.hive.outputs.latest != steps.current.outputs.current

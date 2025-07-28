@@ -15,9 +15,10 @@ env:
 
 jobs:
   test-hive-metastore:
+    strategy:
+      matrix:
+        platform_tag: [amd64, arm64]
     runs-on: ubuntu-latest
-    env:
-      PLATFORM_TAG: amd64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,7 +31,10 @@ jobs:
           done
 
       - name: Set METASTORE_DB_HOST dynamically
-        run: echo "METASTORE_DB_HOST=pg-test-${{ env.PLATFORM_TAG }}" >> $GITHUB_ENV
+        run: echo "METASTORE_DB_HOST=pg-test-${{ matrix.platform_tag }}" >> $GITHUB_ENV
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.1.0
@@ -41,19 +45,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.CACHE_DIR }}
-          key: buildx-${{ env.PLATFORM_TAG }}-${{ hashFiles('Dockerfile', 'versions.json') }}
+          key: buildx-${{ matrix.platform_tag }}-${{ hashFiles('Dockerfile', 'versions.json') }}
           restore-keys: |
-            buildx-${{ env.PLATFORM_TAG }}-
+            buildx-${{ matrix.platform_tag }}-
             buildx-
 
       - name: Build image
         run: |
           docker buildx build \
-            --platform linux/${{ env.PLATFORM_TAG }} \
+            --platform linux/${{ matrix.platform_tag }} \
             --output=type=docker \
             --cache-from=type=local,src=${{ env.CACHE_DIR }} \
             --cache-to=type=local,dest=${{ env.CACHE_DIR }}-new \
-            --build-arg PLATFORM_TAG=${{ env.PLATFORM_TAG }} \
+            --build-arg PLATFORM_TAG=${{ matrix.platform_tag }} \
             --tag ci-local/hive-metastore:test \
             .
           rm -rf ${{ env.CACHE_DIR }}
@@ -75,7 +79,7 @@ jobs:
       - name: Start PostgreSQL
         run: |
           docker run -d --network ${{ env.NETWORK_NAME }} \
-            --name pg-test-${{ env.PLATFORM_TAG }} \
+            --name pg-test-${{ matrix.platform_tag }} \
             -e POSTGRES_USER=${{ env.METASTORE_DB_USER }} \
             -e POSTGRES_PASSWORD=${{ env.METASTORE_DB_PASSWORD }} \
             -e POSTGRES_DB=${{ env.METASTORE_DB }} \
@@ -84,15 +88,15 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
-            docker exec pg-test-${{ env.PLATFORM_TAG }} pg_isready -U ${{ env.METASTORE_DB_USER }} -d ${{ env.METASTORE_DB }} && exit 0 || sleep 3
+            docker exec pg-test-${{ matrix.platform_tag }} pg_isready -U ${{ env.METASTORE_DB_USER }} -d ${{ env.METASTORE_DB }} && exit 0 || sleep 3
           done
-          docker logs pg-test-${{ env.PLATFORM_TAG }}
+          docker logs pg-test-${{ matrix.platform_tag }}
           exit 1
 
       - name: Run Hive Metastore
         run: |
-          docker run -d --platform linux/${{ env.PLATFORM_TAG }} --network ${{ env.NETWORK_NAME }} \
-            --name metastore-test-${{ env.PLATFORM_TAG }} \
+          docker run -d --platform linux/${{ matrix.platform_tag }} --network ${{ env.NETWORK_NAME }} \
+            --name metastore-test-${{ matrix.platform_tag }} \
             --env-file .env \
             -e METASTORE_DB_HOST=${{ env.METASTORE_DB_HOST }} \
             --health-start-period=360s \
@@ -102,7 +106,7 @@ jobs:
         run: |
           echo "Waiting for container to start..."
           for i in {1..30}; do
-            status=$(docker inspect --format='{{.State.Status}}' metastore-test-${{ env.PLATFORM_TAG }})
+            status=$(docker inspect --format='{{.State.Status}}' metastore-test-${{ matrix.platform_tag }})
             echo "Attempt $i: Container status is $status"
             if [ "$status" = "running" ]; then
               echo "Container is running, proceeding with health checks..."
@@ -114,7 +118,7 @@ jobs:
           sleep 120
           echo "Checking health status of Hive Metastore"
           for i in {1..20}; do
-            health=$(docker inspect --format='{{json .State.Health}}' metastore-test-${{ env.PLATFORM_TAG }} | jq -r '.Status // "starting"')
+            health=$(docker inspect --format='{{json .State.Health}}' metastore-test-${{ matrix.platform_tag }} | jq -r '.Status // "starting"')
             echo "Attempt $i: Health status is $health"
             if [ "$health" = "healthy" ]; then
               echo "Hive Metastore is healthy"
@@ -123,19 +127,19 @@ jobs:
             sleep 10
           done
           echo "Health check failed after maximum retries. Dumping logs:"
-          docker inspect metastore-test-${{ env.PLATFORM_TAG }}
-          docker logs metastore-test-${{ env.PLATFORM_TAG }}
+          docker inspect metastore-test-${{ matrix.platform_tag }}
+          docker logs metastore-test-${{ matrix.platform_tag }}
           exit 1
 
       - name: Dump container logs on failure
         if: failure()
         run: |
           echo "PostgreSQL logs:"
-          docker logs pg-test-${{ env.PLATFORM_TAG }} || true
+          docker logs pg-test-${{ matrix.platform_tag }} || true
           echo "Hive Metastore logs:"
-          docker logs metastore-test-${{ env.PLATFORM_TAG }} || true
+          docker logs metastore-test-${{ matrix.platform_tag }} || true
 
       - name: Clean up containers
         run: |
-          docker rm -f metastore-test-${{ env.PLATFORM_TAG }} || true
-          docker rm -f pg-test-${{ env.PLATFORM_TAG }} || true
+          docker rm -f metastore-test-${{ matrix.platform_tag }} || true
+          docker rm -f pg-test-${{ matrix.platform_tag }} || true

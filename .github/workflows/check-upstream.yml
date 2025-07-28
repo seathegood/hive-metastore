@@ -5,6 +5,9 @@ on:
     - cron: '0 2 * * *'  # Run daily at 2am UTC
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   check-hive-version:
     runs-on: ubuntu-latest

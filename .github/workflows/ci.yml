@@ -79,7 +79,6 @@ jobs:
             -e POSTGRES_USER=${{ env.METASTORE_DB_USER }} \
             -e POSTGRES_PASSWORD=${{ env.METASTORE_DB_PASSWORD }} \
             -e POSTGRES_DB=${{ env.METASTORE_DB }} \
-            -p ${{ env.METASTORE_DB_PORT }}:${{ env.METASTORE_DB_PORT }} \
             postgres:15
 
       - name: Wait for PostgreSQL
@@ -97,7 +96,6 @@ jobs:
             --env-file .env \
             -e METASTORE_DB_HOST=${{ env.METASTORE_DB_HOST }} \
             --health-start-period=360s \
-            -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
             ci-local/hive-metastore:test
 
       - name: Wait for Hive to become healthy

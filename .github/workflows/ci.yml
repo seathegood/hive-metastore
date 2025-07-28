@@ -87,14 +87,16 @@ jobs:
         run: |
           docker run -d --network ${{ env.NETWORK_NAME }} \
             --name pg-test-matrix-${{ env.PLATFORM_TAG }} \
-            --env-file .env \
+            -e POSTGRES_USER=${{ env.METASTORE_DB_USER }} \
+            -e POSTGRES_PASSWORD=${{ env.METASTORE_DB_PASSWORD }} \
+            -e POSTGRES_DB=${{ env.METASTORE_DB }} \
             -p ${{ env.METASTORE_DB_PORT }}:${{ env.METASTORE_DB_PORT }} \
             postgres:15
 
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
-            docker exec pg-test-matrix-${{ env.PLATFORM_TAG }} pg_isready -U ${{ env.METASTORE_DB_USER }} && exit 0 || sleep 3
+            docker exec pg-test-matrix-${{ env.PLATFORM_TAG }} pg_isready -U ${{ env.METASTORE_DB_USER }} -d ${{ env.METASTORE_DB }} && exit 0 || sleep 3
           done
           docker logs pg-test-matrix-${{ env.PLATFORM_TAG }}
           exit 1

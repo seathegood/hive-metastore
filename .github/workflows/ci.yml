@@ -23,15 +23,9 @@ jobs:
             run_tests: true
           - platform: linux/arm64
             run_tests: true
-    # Removed job-level if, see step for skipping unsupported matrix combination.
     env:
       PLATFORM_TAG: ${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
     steps:
-      - name: Skip unsupported matrix combination
-        if: matrix.platform == 'linux/arm64' && runner.arch != 'ARM64'
-        run: |
-          echo "Skipping job for ${{ matrix.platform }} on ${{ runner.arch }}"
-          exit 0
       - name: Checkout code
         if: matrix.run_tests == 'true'
         uses: actions/checkout@v4.1.1
@@ -131,7 +125,7 @@ jobs:
             --name metastore-test-matrix-${{ env.PLATFORM_TAG }} \
             --env-file .env \
             -e METASTORE_DB_HOST=${{ env.METASTORE_DB_HOST }} \
-            --health-start-period=180s \
+            --health-start-period=360s \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
             ci-local/hive-metastore:ci-test-${{ env.PLATFORM_TAG }}
 

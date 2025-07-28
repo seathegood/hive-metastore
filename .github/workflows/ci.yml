@@ -59,8 +59,18 @@ jobs:
           rm -rf ${{ env.CACHE_DIR }}
           mv ${{ env.CACHE_DIR }}-new ${{ env.CACHE_DIR }}
 
+      - name: Print critical env vars
+        run: |
+          echo "User: $METASTORE_DB_USER"
+          echo "Pass: $METASTORE_DB_PASSWORD"
+          echo "DB:   $METASTORE_DB"
+          echo "Port: $METASTORE_DB_PORT"
+
       - name: Create Docker network
         run: docker network create ${{ env.NETWORK_NAME }}
+
+      - name: Confirm Docker network exists
+        run: docker network ls && docker network inspect ${{ env.NETWORK_NAME }} || true
 
       - name: Start PostgreSQL
         run: |
@@ -118,6 +128,14 @@ jobs:
           docker inspect metastore-test-${{ env.PLATFORM_TAG }}
           docker logs metastore-test-${{ env.PLATFORM_TAG }}
           exit 1
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          echo "PostgreSQL logs:"
+          docker logs pg-test-${{ env.PLATFORM_TAG }} || true
+          echo "Hive Metastore logs:"
+          docker logs metastore-test-${{ env.PLATFORM_TAG }} || true
 
       - name: Clean up containers
         run: |

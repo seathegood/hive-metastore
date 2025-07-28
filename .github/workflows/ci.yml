@@ -18,20 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - platform: linux/amd64
-            run_tests: true
-          - platform: linux/arm64
-            run_tests: true
+        platform: [linux/amd64, linux/arm64]
     env:
       PLATFORM_TAG: ${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
     steps:
       - name: Checkout code
-        if: matrix.run_tests == 'true'
         uses: actions/checkout@v4.1.1
 
       - name: Load environment from .env file
-        if: matrix.run_tests == 'true'
         run: |
           echo "Loading env vars into GITHUB_ENV"
           grep -v '^#' .env | while read -r line; do
@@ -39,12 +33,10 @@ jobs:
           done
 
       - name: Set METASTORE_DB_HOST dynamically
-        if: matrix.run_tests == 'true'
         run: echo "METASTORE_DB_HOST=pg-test-matrix-${{ env.PLATFORM_TAG }}" >> $GITHUB_ENV
 
 
       - name: Set up Docker with containerd
-        if: matrix.run_tests == 'true'
         uses: docker/setup-docker-action@v4.0.0
         with:
           daemon-config: |
@@ -55,13 +47,11 @@ jobs:
             }
 
       - name: Set up QEMU
-        if: matrix.run_tests == 'true'
         uses: docker/setup-qemu-action@v3
         with:
           platforms: all
 
       - name: Set up Docker Buildx
-        if: matrix.run_tests == 'true'
         uses: docker/setup-buildx-action@v3.1.0
         with:
           driver: docker-container
@@ -71,7 +61,6 @@ jobs:
           use: true
 
       - name: Cache Docker layers
-        if: matrix.run_tests == 'true'
         uses: actions/cache@v4
         with:
           path: ${{ env.CACHE_DIR }}
@@ -81,11 +70,9 @@ jobs:
             buildx-
 
       - name: Create Docker network
-        if: matrix.run_tests == 'true'
         run: docker network create ${{ env.NETWORK_NAME }}
 
       - name: Build and push Docker image
-        if: matrix.run_tests == 'true'
         run: |
           docker buildx build \
             --platform ${{ matrix.platform }} \
@@ -99,7 +86,6 @@ jobs:
           mv ${{ env.CACHE_DIR }}-new ${{ env.CACHE_DIR }}
 
       - name: Start PostgreSQL
-        if: matrix.run_tests == 'true'
         run: |
           docker run -d --network ${{ env.NETWORK_NAME }} \
             --name pg-test-matrix-${{ env.PLATFORM_TAG }} \
@@ -110,7 +96,6 @@ jobs:
             postgres:15
 
       - name: Wait for PostgreSQL
-        if: matrix.run_tests == 'true'
         run: |
           for i in {1..10}; do
             docker exec pg-test-matrix-${{ env.PLATFORM_TAG }} pg_isready -U ${{ env.METASTORE_DB_USER }} -d ${{ env.METASTORE_DB }} && exit 0 || sleep 3
@@ -119,7 +104,6 @@ jobs:
           exit 1
 
       - name: Run Hive Metastore
-        if: matrix.run_tests == 'true'
         run: |
           docker run -d --platform ${{ matrix.platform }} --network ${{ env.NETWORK_NAME }} \
             --name metastore-test-matrix-${{ env.PLATFORM_TAG }} \
@@ -130,7 +114,6 @@ jobs:
             ci-local/hive-metastore:ci-test-${{ env.PLATFORM_TAG }}
 
       - name: Check health status
-        if: matrix.run_tests == 'true'
         run: |
           echo "Waiting for container to start..."
           for i in {1..30}; do
@@ -160,32 +143,26 @@ jobs:
           exit 1
 
       - name: Validate versions.json
-        if: matrix.run_tests == 'true' && matrix.platform == 'linux/amd64'
         run: jq -e 'has("hive") and has("postgresql")' versions.json
 
       - name: Install ShellCheck
-        if: matrix.run_tests == 'true' && matrix.platform == 'linux/amd64'
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: Lint shell scripts
-        if: matrix.run_tests == 'true' && matrix.platform == 'linux/amd64'
         run: shellcheck docker-entrypoint.sh healthcheck.sh
 
       - name: Clean up containers
-        if: always()
         run: |
           docker rm -f metastore-test-matrix-${{ env.PLATFORM_TAG }} || true
           docker rm -f pg-test-matrix-${{ env.PLATFORM_TAG }} || true
 
       - name: Save logs
-        if: always()
         run: |
           mkdir -p artifacts
           docker logs metastore-test-matrix-${{ env.PLATFORM_TAG }} 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/metastore-matrix-${{ env.PLATFORM_TAG }}.log || true
           docker logs pg-test-matrix-${{ env.PLATFORM_TAG }} 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/postgres-matrix-${{ env.PLATFORM_TAG }}.log || true
 
       - name: Upload logs
-        if: matrix.run_tests == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ci-logs-matrix-${{ env.PLATFORM_TAG }}

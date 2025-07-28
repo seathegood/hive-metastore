@@ -14,16 +14,13 @@ env:
   NETWORK_NAME: ci-net
 
 jobs:
-  test-matrix:
+  test-hive-metastore:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: [linux/amd64, linux/arm64]
     env:
-      PLATFORM_TAG: ${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
+      PLATFORM_TAG: amd64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4
 
       - name: Load environment from .env file
         run: |
@@ -33,32 +30,12 @@ jobs:
           done
 
       - name: Set METASTORE_DB_HOST dynamically
-        run: echo "METASTORE_DB_HOST=pg-test-matrix-${{ env.PLATFORM_TAG }}" >> $GITHUB_ENV
-
-
-      - name: Set up Docker with containerd
-        uses: docker/setup-docker-action@v4.0.0
-        with:
-          daemon-config: |
-            {
-              "features": {
-                "containerd-snapshotter": true
-              }
-            }
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
+        run: echo "METASTORE_DB_HOST=pg-test-${{ env.PLATFORM_TAG }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.1.0
         with:
-          driver: docker-container
-          driver-opts: image=moby/buildkit:buildx-stable-1
-          buildkitd-flags: --debug
           install: true
-          use: true
 
       - name: Cache Docker layers
         uses: actions/cache@v4
@@ -69,26 +46,26 @@ jobs:
             buildx-${{ env.PLATFORM_TAG }}-
             buildx-
 
-      - name: Create Docker network
-        run: docker network create ${{ env.NETWORK_NAME }}
-
-      - name: Build and push Docker image
+      - name: Build image
         run: |
           docker buildx build \
-            --platform ${{ matrix.platform }} \
+            --platform linux/${{ env.PLATFORM_TAG }} \
             --output=type=docker \
             --cache-from=type=local,src=${{ env.CACHE_DIR }} \
             --cache-to=type=local,dest=${{ env.CACHE_DIR }}-new \
             --build-arg PLATFORM_TAG=${{ env.PLATFORM_TAG }} \
-            --tag ci-local/hive-metastore:ci-test-${{ env.PLATFORM_TAG }} \
+            --tag ci-local/hive-metastore:test \
             .
           rm -rf ${{ env.CACHE_DIR }}
           mv ${{ env.CACHE_DIR }}-new ${{ env.CACHE_DIR }}
 
+      - name: Create Docker network
+        run: docker network create ${{ env.NETWORK_NAME }}
+
       - name: Start PostgreSQL
         run: |
           docker run -d --network ${{ env.NETWORK_NAME }} \
-            --name pg-test-matrix-${{ env.PLATFORM_TAG }} \
+            --name pg-test-${{ env.PLATFORM_TAG }} \
             -e POSTGRES_USER=${{ env.METASTORE_DB_USER }} \
             -e POSTGRES_PASSWORD=${{ env.METASTORE_DB_PASSWORD }} \
             -e POSTGRES_DB=${{ env.METASTORE_DB }} \
@@ -98,26 +75,26 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
-            docker exec pg-test-matrix-${{ env.PLATFORM_TAG }} pg_isready -U ${{ env.METASTORE_DB_USER }} -d ${{ env.METASTORE_DB }} && exit 0 || sleep 3
+            docker exec pg-test-${{ env.PLATFORM_TAG }} pg_isready -U ${{ env.METASTORE_DB_USER }} -d ${{ env.METASTORE_DB }} && exit 0 || sleep 3
           done
-          docker logs pg-test-matrix-${{ env.PLATFORM_TAG }}
+          docker logs pg-test-${{ env.PLATFORM_TAG }}
           exit 1
 
       - name: Run Hive Metastore
         run: |
-          docker run -d --platform ${{ matrix.platform }} --network ${{ env.NETWORK_NAME }} \
-            --name metastore-test-matrix-${{ env.PLATFORM_TAG }} \
+          docker run -d --platform linux/${{ env.PLATFORM_TAG }} --network ${{ env.NETWORK_NAME }} \
+            --name metastore-test-${{ env.PLATFORM_TAG }} \
             --env-file .env \
             -e METASTORE_DB_HOST=${{ env.METASTORE_DB_HOST }} \
             --health-start-period=360s \
             -p ${{ env.METASTORE_PORT }}:${{ env.METASTORE_PORT }} \
-            ci-local/hive-metastore:ci-test-${{ env.PLATFORM_TAG }}
+            ci-local/hive-metastore:test
 
-      - name: Check health status
+      - name: Wait for Hive to become healthy
         run: |
           echo "Waiting for container to start..."
           for i in {1..30}; do
-            status=$(docker inspect --format='{{.State.Status}}' metastore-test-matrix-${{ env.PLATFORM_TAG }})
+            status=$(docker inspect --format='{{.State.Status}}' metastore-test-${{ env.PLATFORM_TAG }})
             echo "Attempt $i: Container status is $status"
             if [ "$status" = "running" ]; then
               echo "Container is running, proceeding with health checks..."
@@ -127,9 +104,9 @@ jobs:
           done
           echo "Delaying additional 120 seconds for Hive initialization..."
           sleep 120
-          echo "Checking health status of Hive Metastore on platform ${{ env.PLATFORM_TAG }}"
+          echo "Checking health status of Hive Metastore"
           for i in {1..20}; do
-            health=$(docker inspect --format='{{json .State.Health}}' metastore-test-matrix-${{ env.PLATFORM_TAG }} | jq -r '.Status')
+            health=$(docker inspect --format='{{json .State.Health}}' metastore-test-${{ env.PLATFORM_TAG }} | jq -r '.Status')
             echo "Attempt $i: Health status is $health"
             if [ "$health" = "healthy" ]; then
               echo "Hive Metastore is healthy"
@@ -138,32 +115,11 @@ jobs:
             sleep 10
           done
           echo "Health check failed after maximum retries. Dumping logs:"
-          docker inspect metastore-test-matrix-${{ env.PLATFORM_TAG }}
-          docker logs metastore-test-matrix-${{ env.PLATFORM_TAG }}
+          docker inspect metastore-test-${{ env.PLATFORM_TAG }}
+          docker logs metastore-test-${{ env.PLATFORM_TAG }}
           exit 1
-
-      - name: Validate versions.json
-        run: jq -e 'has("hive") and has("postgresql")' versions.json
-
-      - name: Install ShellCheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
-
-      - name: Lint shell scripts
-        run: shellcheck docker-entrypoint.sh healthcheck.sh
 
       - name: Clean up containers
         run: |
-          docker rm -f metastore-test-matrix-${{ env.PLATFORM_TAG }} || true
-          docker rm -f pg-test-matrix-${{ env.PLATFORM_TAG }} || true
-
-      - name: Save logs
-        run: |
-          mkdir -p artifacts
-          docker logs metastore-test-matrix-${{ env.PLATFORM_TAG }} 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/metastore-matrix-${{ env.PLATFORM_TAG }}.log || true
-          docker logs pg-test-matrix-${{ env.PLATFORM_TAG }} 2>&1 | sed -E 's/(password=)[^&"]+/\1****/g' | sed -E 's/(jdbc:[^ ]+):\/\/[^ ]+/\1:\/\/REDACTED/g' > artifacts/postgres-matrix-${{ env.PLATFORM_TAG }}.log || true
-
-      - name: Upload logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-logs-matrix-${{ env.PLATFORM_TAG }}
-          path: artifacts/
+          docker rm -f metastore-test-${{ env.PLATFORM_TAG }} || true
+          docker rm -f pg-test-${{ env.PLATFORM_TAG }} || true

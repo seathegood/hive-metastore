@@ -198,5 +198,5 @@ VOLUME ["/opt/hive/logs", "/opt/hive/tmp"]
 EXPOSE 9083
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=360s --retries=5 \
   CMD /usr/local/bin/healthcheck.sh

@@ -8,9 +8,11 @@ command -v xxd > /dev/null || { echo "xxd is required"; exit 1; }
 HOST="${HIVE_METASTORE_HOST:-localhost}"
 PORT="${HIVE_METASTORE_PORT:-9083}"
 
+echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [INFO] Checking TCP on $HOST:$PORT"
+
 # First check: Is the TCP port open?
 if ! nc -z "$HOST" "$PORT"; then
-  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [ERROR] Hive Metastore TCP check failed on $HOST:$PORT"
+  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [ERROR] TCP check failed"
   exit 1
 fi
 
@@ -20,8 +22,10 @@ fi
 PING_HEX="80010000000450494E4700"
 PING_BIN=$(echo "$PING_HEX" | xxd -r -p)
 
+echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [INFO] Sending Thrift PING"
+
 if ! printf "$PING_BIN" | nc "$HOST" "$PORT" -w 2 > /dev/null 2>&1; then
-  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [ERROR] Hive Metastore passed TCP but failed Thrift PING test on $HOST:$PORT"
+  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [ERROR] Thrift PING failed"
   exit 1
 fi
 

@@ -28,7 +28,9 @@ jobs:
       - name: Load environment from .env file
         run: |
           echo "Loading env vars into GITHUB_ENV"
-          export $(grep -v '^#' .env | xargs)
+          grep -v '^#' .env | while read -r line; do
+            echo "$line" >> $GITHUB_ENV
+          done
 
       - name: Set METASTORE_DB_HOST dynamically
         run: echo "METASTORE_DB_HOST=pg-test-matrix-${{ env.PLATFORM_TAG }}" >> $GITHUB_ENV

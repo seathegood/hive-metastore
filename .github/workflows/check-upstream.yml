@@ -77,10 +77,12 @@ jobs:
         run: |
           git tag -f v${{ steps.hive.outputs.latest }}
           git push origin -f v${{ steps.hive.outputs.latest }}
+          # Mark the release as published and latest so that workflows listening on release.published are triggered
           gh release create v${{ steps.hive.outputs.latest }} \
-            --title "Hive ${{ steps.hive.outputs.latest }}" \
+            --title "Hive Metastore v${{ steps.hive.outputs.latest }}" \
             --generate-notes \
-            --verify-tag
+            --verify-tag \
+            --latest
 
       - name: Install GitHub CLI
         run: |

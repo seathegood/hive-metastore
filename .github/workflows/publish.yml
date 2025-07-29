@@ -3,6 +3,9 @@ name: Publish Hive Metastore Image
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - 'v*'
 
 env:
   REGISTRY_IMAGE: seathegood/hive-metastore

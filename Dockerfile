@@ -175,6 +175,16 @@ COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hado
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-shaded-guava-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/postgresql-jdbc.jar $HIVE_HOME/lib/postgresql-jdbc.jar
 
+# Spring libraries
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/spring-core-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/spring-context-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/spring-jcl-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/spring-beans-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/spring-aop-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/spring-jdbc-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/spring-expression-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/spring-tx-*.jar $HIVE_HOME/lib/
+
 # Stax Libraries
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/stax2-api-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/yarn/lib/stax-ex-*.jar $HADOOP_HOME/lib/

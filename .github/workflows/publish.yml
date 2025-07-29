@@ -22,12 +22,13 @@ jobs:
           - platform: linux/arm64
     steps:
       - name: Prepare environment
-        # Set platform-specific environment variables and extract version from release tag
+        # Set platform-specific environment variables and extract normalized version from tag
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-          version=${{ github.event.release.tag_name }}
-          echo "HIVE_METASTORE_VERSION=${version}" >> $GITHUB_ENV
+          version=${{ github.ref_name }}
+          normalized=$(echo "$version" | grep -oE '^v[0-9]+\.[0-9]+\.[0-9]+')
+          echo "HIVE_METASTORE_VERSION=${normalized#v}" >> $GITHUB_ENV
 
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -38,8 +39,9 @@ jobs:
         with:
           images: seathegood/hive-metastore
           tags: |
-            type=semver,pattern={{version}},value=${{ github.event.release.tag_name }}
+            type=semver,pattern={{version}},value=${{ env.HIVE_METASTORE_VERSION }}
             type=raw,value=latest
+            type=raw,value=stable,enable=${{ startsWith(github.ref_name, 'v') && !contains(github.ref_name, '-') }}
             type=sha
 
       - name: Set up QEMU

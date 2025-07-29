@@ -45,7 +45,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.CACHE_DIR }}
-          key: buildx-${{ matrix.platform_tag }}-${{ hashFiles('Dockerfile', 'versions.json') }}
+          key: buildx-${{ matrix.platform_tag }}-${{ github.sha }}-${{ hashFiles('Dockerfile', 'versions.json') }}
           restore-keys: |
             buildx-${{ matrix.platform_tag }}-
             buildx-

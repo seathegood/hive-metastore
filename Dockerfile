@@ -178,6 +178,7 @@ COPY --from=builder /build/postgresql-jdbc.jar $HIVE_HOME/lib/postgresql-jdbc.ja
 # Stax Libraries
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/stax2-api-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/yarn/lib/stax-ex-*.jar $HADOOP_HOME/lib/
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/yarn/hadoop-yarn-common-*.jar $HADOOP_HOME/lib/
 
 # Secure permissions
 RUN chown -R hive:hive $HIVE_HOME $HADOOP_HOME && \

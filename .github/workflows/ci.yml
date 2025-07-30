@@ -109,25 +109,23 @@ jobs:
             status=$(docker inspect --format='{{.State.Status}}' metastore-test-${{ matrix.platform_tag }})
             echo "Attempt $i: Container status is $status"
             if [ "$status" = "running" ]; then
-              echo "Container is running, proceeding with health checks..."
+              echo "Container is running, proceeding with readiness checks..."
               break
             fi
             sleep 5
           done
-          echo "Delaying additional 120 seconds for Hive initialization..."
-          sleep 120
-          echo "Checking health status of Hive Metastore"
-          for i in {1..20}; do
-            health=$(docker inspect --format='{{json .State.Health}}' metastore-test-${{ matrix.platform_tag }} | jq -r '.Status // "starting"')
-            echo "Attempt $i: Health status is $health"
-            if [ "$health" = "healthy" ]; then
-              echo "Hive Metastore is healthy"
+
+          echo "Polling for /tmp/metastore-ready inside container..."
+          for i in {1..60}; do
+            docker exec metastore-test-${{ matrix.platform_tag }} test -f /tmp/metastore-ready && {
+              echo "Metastore is ready"
               exit 0
-            fi
+            }
+            echo "Attempt $i: Not ready yet"
             sleep 10
           done
-          echo "Health check failed after maximum retries. Dumping logs:"
-          docker inspect metastore-test-${{ matrix.platform_tag }}
+
+          echo "Hive Metastore failed to start in time"
           docker logs metastore-test-${{ matrix.platform_tag }}
           exit 1
 

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 echo "Starting Hive Metastore container..."
+rm -f /tmp/metastore-ready
 
 # Set required defaults and paths
 export HADOOP_HOME=${HADOOP_HOME:-/opt/hadoop}
@@ -124,6 +125,7 @@ cleanup() {
   kill "$pid"
   wait "$pid"
   echo "Hive Metastore stopped."
+  rm -f /tmp/metastore-ready
   exit 0
 }
 trap cleanup TERM INT
@@ -133,4 +135,5 @@ trap cleanup TERM INT
 echo "Launching Hive Metastore on port $METASTORE_PORT..."
 "$HIVE_HOME/bin/hive" --service metastore &
 pid=$!
+touch /tmp/metastore-ready
 wait "$pid"

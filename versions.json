@@ -2,6 +2,9 @@
   "hive": {
     "4.0.1": {
       "sha256": "2bf988a1ed17437b1103e367939c25a13f64d36cf6d1c3bef8c3f319f0067619"
+    },
+    "4.1.0": {
+      "sha256": "9d160af85f0f44ea7e0ccaf0a8c876e36ac35abfd9f8c506504a11e6daaff9aa"
     }
   },
   "postgresql": {

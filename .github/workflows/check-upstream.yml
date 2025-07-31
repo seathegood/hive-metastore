@@ -25,6 +25,10 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
 
       - name: Get latest Hive version
         id: hive
@@ -77,17 +81,17 @@ jobs:
         run: |
           git tag -f v${{ steps.hive.outputs.latest }}
           git push origin -f v${{ steps.hive.outputs.latest }}
-          # Mark the release as published and latest so that workflows listening on release.published are triggered
+
+          echo "Waiting for tag to be available on GitHub..."
+          sleep 5
+
+          gh auth status
+
           gh release create v${{ steps.hive.outputs.latest }} \
             --title "Hive Metastore v${{ steps.hive.outputs.latest }}" \
             --generate-notes \
             --verify-tag \
             --latest
-
-      - name: Install GitHub CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gh
 
       - name: Summary
         if: steps.hive.outputs.latest != steps.current.outputs.current

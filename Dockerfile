@@ -24,10 +24,7 @@ WORKDIR /build
 RUN wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz && \
     wget -q https://dlcdn.apache.org/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \
     sha256sum -c apache-hive-${HIVE_VERSION}-bin.tar.gz.sha256 && \
-    tar -xzf apache-hive-${HIVE_VERSION}-bin.tar.gz && \
-    mkdir -p /opt/hive-cli && \
-    tar -xzf apache-hive-${HIVE_VERSION}-bin.tar.gz -C /opt/hive-cli --strip-components=1 && \
-    cp /opt/hive-cli/lib/hive-cli-*.jar apache-hive-${HIVE_VERSION}-bin/lib/
+    tar -xzf apache-hive-${HIVE_VERSION}-bin.tar.gz
 
 # Download and verify Hadoop
 RUN wget -q https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
@@ -100,7 +97,7 @@ COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/guava-*.jar $HIVE
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-beeline-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-cli-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-common-*.jar $HIVE_HOME/lib/
-# COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-exec-*.jar $HIVE_HOME/lib/
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-exec-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-hcatalog-core-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-hcatalog-server-extensions-*.jar $HIVE_HOME/lib/
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/hive-jdbc-*.jar $HIVE_HOME/lib/

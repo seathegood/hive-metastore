@@ -94,15 +94,17 @@ while ! nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
   fi
 done
 
+HIVE_SCHEMA_VERSION="$(echo "$HIVE_VERSION" | cut -d '.' -f 1,2).0"
+
 # Checking for existing Hive schema...
 echo "Checking for existing Hive schema..."
 if ! VERSION_ROW=$(PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$METASTORE_DB_HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -Atc "SELECT version FROM VERSION;" 2>/dev/null); then
   echo "No schema detected. Running direct schema initialization SQL..."
-  PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$METASTORE_DB_HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -f "$HIVE_HOME/scripts/metastore/upgrade/postgres/hive-schema-4.0.0.postgres.sql"
+  PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$METASTORE_DB_HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -f "$HIVE_HOME/scripts/metastore/upgrade/postgres/hive-schema-${HIVE_SCHEMA_VERSION}.postgres.sql"
 else
   echo "Detected schema version: $VERSION_ROW"
   if [ "$VERSION_ROW" != "4.1.0" ]; then
-    UPGRADE_SCRIPT="$HIVE_HOME/scripts/metastore/upgrade/postgres/upgrade-${VERSION_ROW}-to-4.0.0.postgres.sql"
+    UPGRADE_SCRIPT="$HIVE_HOME/scripts/metastore/upgrade/postgres/upgrade-${VERSION_ROW}-to-${HIVE_SCHEMA_VERSION}.postgres.sql"
     if [ -f "$UPGRADE_SCRIPT" ]; then
       echo "Running upgrade script: $UPGRADE_SCRIPT"
       PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$METASTORE_DB_HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -f "$UPGRADE_SCRIPT"

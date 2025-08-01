@@ -94,17 +94,25 @@ while ! nc -z "${METASTORE_DB_HOST}" "${METASTORE_DB_PORT}"; do
   fi
 done
 
-# Initialize schema if not already present
+# Checking for existing Hive schema...
 echo "Checking for existing Hive schema..."
-if ! "$HIVE_HOME/bin/schematool" -dbType postgres -info --verbose 2>&1 | grep -q 'Metastore schema version:'; then
-  echo "No schema detected. Initializing Hive schema..."
-  HADOOP_CLASSPATH=$(find "$HADOOP_HOME" "$HIVE_HOME/lib" -name '*.jar' | tr '\n' ':' | sed 's/:$//')
-  echo "HADOOP_CLASSPATH set to:"
-  echo "$HADOOP_CLASSPATH" | tr ':' '\n'
-  export HADOOP_CLASSPATH
-  "$HIVE_HOME/bin/schematool" -dbType postgres -initSchemaTo 4.0.0 --verbose
+if ! VERSION_ROW=$(PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$METASTORE_DB_HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -Atc "SELECT version FROM VERSION;" 2>/dev/null); then
+  echo "No schema detected. Running direct schema initialization SQL..."
+  PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$METASTORE_DB_HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -f "$HIVE_HOME/scripts/metastore/upgrade/postgres/hive-schema-4.1.0.postgres.sql"
 else
-  echo "Hive schema already initialized."
+  echo "Detected schema version: $VERSION_ROW"
+  if [ "$VERSION_ROW" != "4.1.0" ]; then
+    UPGRADE_SCRIPT="$HIVE_HOME/scripts/metastore/upgrade/postgres/upgrade-${VERSION_ROW}-to-4.1.0.postgres.sql"
+    if [ -f "$UPGRADE_SCRIPT" ]; then
+      echo "Running upgrade script: $UPGRADE_SCRIPT"
+      PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$METASTORE_DB_HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -f "$UPGRADE_SCRIPT"
+    else
+      echo "ERROR: No upgrade script found for version $VERSION_ROW"
+      exit 1
+    fi
+  else
+    echo "Hive schema is up-to-date."
+  fi
 fi
 
 #

@@ -18,4 +18,12 @@ if ! nc -z "$HOST" "$PORT"; then
   exit 1
 fi
 
-exec schematool -dbType postgres -info
+
+EXPECTED_VERSION="4.1.0"
+
+VERSION_ROW=$(PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -Atc "SELECT version FROM VERSION;" 2>/dev/null || echo "")
+
+if [ "$VERSION_ROW" != "$EXPECTED_VERSION" ]; then
+  echo "Hive schema version is '$VERSION_ROW', expected '$EXPECTED_VERSION'"
+  exit 1
+fi

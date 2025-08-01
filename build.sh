@@ -5,6 +5,16 @@ set -euo pipefail
 command -v jq >/dev/null 2>&1 || { echo >&2 "jq is required but not installed."; exit 1; }
 [[ -f versions.json ]] || { echo >&2 "versions.json not found."; exit 1; }
 
+# Always define cache-from options
+mkdir -p .buildx-cache
+
+# Clean build cache if requested
+if [[ "${1:-}" == "--clean" ]]; then
+  echo "Cleaning build cache..."
+  rm -rf .buildx-cache
+  shift
+fi
+
 # Ensure buildx builder exists and is used
 if ! docker buildx inspect hive-builder >/dev/null 2>&1; then
   echo "Creating buildx builder 'hive-builder'..."
@@ -56,3 +66,14 @@ docker buildx build \
   --cache-to=type=local,dest=.buildx-cache,mode=max \
   -t seathegood/hive-metastore:"$VERSION-${PLATFORM##*/}" \
   -t seathegood/hive-metastore:latest .
+
+# Logging build info
+echo "Building Hive Metastore image with:"
+echo "  Hive Version: $VERSION"
+echo "  SHA256: $SHA"
+echo "  Tarball: $TARBALL"
+echo "  Platform: $PLATFORM"
+
+echo ""
+echo "Docker image size:"
+docker images seathegood/hive-metastore --format "  {{.Tag}}: {{.Size}}"

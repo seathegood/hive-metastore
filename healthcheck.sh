@@ -19,7 +19,7 @@ if ! nc -z "$HOST" "$PORT"; then
 fi
 
 
-EXPECTED_VERSION="4.1.0"
+EXPECTED_VERSION="4.0.0"
 
 VERSION_ROW=$(PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -Atc "SELECT version FROM VERSION;" 2>/dev/null || echo "")
 

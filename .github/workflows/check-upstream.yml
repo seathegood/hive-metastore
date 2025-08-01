@@ -74,24 +74,17 @@ jobs:
           git commit -am "Update to Hive ${{ steps.hive.outputs.latest }}"
           git push origin main
 
-      - name: Create GitHub Release
+      - name: Create Pull Request
         if: steps.hive.outputs.latest != steps.current.outputs.current
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git tag -f v${{ steps.hive.outputs.latest }}
-          git push origin -f v${{ steps.hive.outputs.latest }}
-
-          echo "Waiting for tag to be available on GitHub..."
-          sleep 5
-
-          gh auth status
-
-          gh release create v${{ steps.hive.outputs.latest }} \
-            --title "Hive Metastore v${{ steps.hive.outputs.latest }}" \
-            --generate-notes \
-            --verify-tag \
-            --latest
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update to Hive ${{ steps.hive.outputs.latest }}"
+          title: "chore: update to Hive ${{ steps.hive.outputs.latest }}"
+          body: |
+            This pull request updates Hive to version ${{ steps.hive.outputs.latest }}.
+            Please review and test before merging.
+          branch: hive-update-${{ steps.hive.outputs.latest }}
 
       - name: Summary
         if: steps.hive.outputs.latest != steps.current.outputs.current

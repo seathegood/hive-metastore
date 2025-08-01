@@ -40,7 +40,7 @@ jobs:
         with:
           images: seathegood/hive-metastore
           tags: |
-            type=semver,pattern={{version}},value=${{ env.HIVE_METASTORE_VERSION }}
+            type=semver,pattern={{version}}
             type=raw,value=latest
             type=raw,value=stable,enable=${{ startsWith(github.ref_name, 'v') && !contains(github.ref_name, '-') }}
             type=sha

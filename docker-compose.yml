@@ -15,6 +15,7 @@ services:
 
   hive-metastore:
     image: seathegood/hive-metastore:latest
+    pull_policy: never
     environment:
       METASTORE_DB: ${METASTORE_DB}
       METASTORE_DB_USER: ${METASTORE_DB_USER}

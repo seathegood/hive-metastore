@@ -186,13 +186,17 @@ if [[ -n "${NO_CACHE}" ]]; then
 fi
 
 if [[ -n "${DEBUG}" ]]; then
+  if [[ -n "${PLATFORM}" ]]; then
+    BUILD_CMD+=(
+      --output="type=docker"
+    )
+  fi
   BUILD_CMD+=(
-    --output="type=docker"
     --progress="plain"
     --pull
     --build-arg "DEBUG=true"
   )
-elif [[ -z "${PUSH}" ]]; then
+elif [[ -z "${PUSH}" && -n "${PLATFORM}" ]]; then
   BUILD_CMD+=(--load)
 fi
 

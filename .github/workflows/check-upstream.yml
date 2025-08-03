@@ -44,8 +44,15 @@ jobs:
           echo "$current" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
+      - name: Check if update is needed
+        run: |
+          if [ "${{ steps.hive.outputs.latest }}" == "${{ steps.current.outputs.current }}" ]; then
+            echo "Hive is already up to date: ${{ steps.current.outputs.current }}"
+            exit 0
+          fi
+
       - name: Compare versions
-        if: steps.hive.outputs.latest != steps.current.outputs.current
+        if: always()
         run: |
           echo "New version found: ${{ steps.hive.outputs.latest }}"
           echo "Current version: ${{ steps.current.outputs.current }}"
@@ -58,9 +65,8 @@ jobs:
       - name: Update Dockerfile and versions.json on main
         if: steps.hive.outputs.latest != steps.current.outputs.current
         run: |
-          git config user.name "$GIT_USER_NAME"
-          git config user.email "$GIT_USER_EMAIL"
-          git checkout main
+          branch="hive-update-${{ steps.hive.outputs.latest }}"
+          git checkout -b "$branch"
           git pull origin main
 
           sed -i "s/ARG HIVE_VERSION=.*/ARG HIVE_VERSION=${{ steps.hive.outputs.latest }}/" $DOCKERFILE_PATH
@@ -78,7 +84,7 @@ jobs:
           git add $VERSION_FILE
 
           git commit -am "Update to Hive ${{ steps.hive.outputs.latest }}"
-          git push origin main
+          git push origin "$branch"
 
       - name: Create Pull Request
         if: steps.hive.outputs.latest != steps.current.outputs.current

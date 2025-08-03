@@ -7,6 +7,7 @@ command -v xxd > /dev/null || { echo "xxd is required"; exit 1; }
 
 HOST="${HIVE_METASTORE_HOST:-localhost}"
 PORT="${HIVE_METASTORE_PORT:-9083}"
+SCHEMA_VERSION="4.0.0"
 
 if [ ! -f /tmp/metastore-ready ]; then
   [ -t 1 ] && echo "Metastore starting"
@@ -19,7 +20,7 @@ if ! nc -z "$HOST" "$PORT"; then
 fi
 
 
-EXPECTED_VERSION="${SCHEMA_VERSION:-4.0.0}"
+EXPECTED_VERSION="${SCHEMA_VERSION}"
 
 VERSION_ROW=$(PGPASSWORD="$METASTORE_DB_PASSWORD" psql -h "$HOST" -U "$METASTORE_DB_USER" -d "$METASTORE_DB" -Atc "SELECT version FROM VERSION;" 2>/dev/null || echo "")
 

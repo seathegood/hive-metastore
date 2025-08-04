@@ -62,7 +62,7 @@ jobs:
         with:
           driver: docker-container
 
-      - name: Update Dockerfile and versions.json on main
+      - name: Update Dockerfile and versions.json on new branch
         if: steps.hive.outputs.latest != steps.current.outputs.current
         run: |
           branch="hive-update-${{ steps.hive.outputs.latest }}"
@@ -81,7 +81,10 @@ jobs:
           sha=$(curl -s $HIVE_DOWNLOAD_BASE/hive-${{ steps.hive.outputs.latest }}/apache-hive-${{ steps.hive.outputs.latest }}-bin.tar.gz.sha256 | cut -d' ' -f1)
           jq --arg v "${{ steps.hive.outputs.latest }}" --arg s "$sha" '.hive[$v] = {sha256: $s}' $VERSION_FILE > tmp.json && mv tmp.json $VERSION_FILE
 
+
           git add $VERSION_FILE
+          git config --local user.email "${{ env.GIT_USER_EMAIL }}"
+          git config --local user.name "${{ env.GIT_USER_NAME }}"
 
           git commit -am "Update to Hive ${{ steps.hive.outputs.latest }}"
           git push origin "$branch"

@@ -98,7 +98,8 @@ RUN addgroup -S hive && \
       $HIVE_HOME/conf \
       $HADOOP_HOME \
       $HIVE_HOME/logs \
-      $HIVE_HOME/tmp
+      $HIVE_HOME/tmp \
+      $HIVE_HOME/licenses
 
 # Copy only required Hive Metastore JARs, minimal Hadoop libs, and configs from builder stage
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/lib/guava-*.jar $HIVE_HOME/lib/
@@ -118,6 +119,12 @@ COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/comm
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/commons-configuration2-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/hadoop-auth-*.jar $HADOOP_HOME/lib/
 COPY --from=builder /build/postgresql-jdbc.jar $HIVE_HOME/lib/postgresql-jdbc.jar
+
+# Copy license and notice files
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/LICENSE $HIVE_HOME/licenses/LICENSE-hive.txt
+COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/NOTICE $HIVE_HOME/licenses/NOTICE-hive.txt
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/LICENSE.txt $HIVE_HOME/licenses/LICENSE-hadoop.txt
+COPY --from=builder /build/hadoop-${HADOOP_VERSION}/NOTICE.txt $HIVE_HOME/licenses/NOTICE-hadoop.txt
 
 # Apache HttpComponents for org.apache.http.config.Lookup
 COPY --from=builder /build/apache-hive-${HIVE_VERSION}-bin/bin/ext/ $HIVE_HOME/bin/ext/

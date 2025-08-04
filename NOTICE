@@ -1,0 +1,7 @@
+This product includes software developed by The Apache Software Foundation (http://www.apache.org/).
+
+Apache Hive and Apache Hadoop are licensed under the Apache License 2.0.
+Their respective NOTICE files are included in the image at:
+
+- licenses/NOTICE-hive.txt
+- licenses/NOTICE-hadoop.txt

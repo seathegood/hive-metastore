@@ -1,7 +1,7 @@
 # Hive Metastore Docker Image (PostgreSQL Backend)
 
 ![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/seathegood/hive-metastore)
-![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)
+![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
 [![CI](https://github.com/seathegood/hive-metastore/actions/workflows/ci.yml/badge.svg)](https://github.com/seathegood/hive-metastore/actions/workflows/ci.yml)
 [![Publish](https://github.com/seathegood/hive-metastore/actions/workflows/publish.yml/badge.svg)](https://github.com/seathegood/hive-metastore/actions/workflows/publish.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/seathegood/hive-metastore.svg)](https://hub.docker.com/r/seathegood/hive-metastore)
@@ -248,4 +248,10 @@ We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) for details o
 
 ## License
 
-Apache License 2.0 — see the [LICENSE](./LICENSE) file.
+MIT License — see the [LICENSE](./LICENSE) file.
+
+This project includes software distributed under the Apache License 2.0, including Apache Hive and Apache Hadoop.
+See the LICENSES directory for more details.
+NOTICE files are also included to meet Apache License 2.0 requirements. See the top-level NOTICE file and `licenses/` directory.
+
+For a full list of included components and their licenses, see [THIRD_PARTY.md](./THIRD_PARTY.md).

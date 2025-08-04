@@ -15,5 +15,6 @@ downloads/
 .buildx-cache/
 
 # Ignore local configs and docs
-README.md
-LICENSE
+# Ensure license files are included in the image
+!LICENSE
+!LICENSES/

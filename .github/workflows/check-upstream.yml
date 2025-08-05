@@ -68,12 +68,11 @@ jobs:
           branch="hive-update-${{ steps.hive.outputs.latest }}"
 
           if git ls-remote --exit-code --heads origin "$branch"; then
-            git fetch origin "$branch":"$branch"
-            git checkout "$branch"
-            git reset --hard origin/"$branch"
-          else
-            git checkout -b "$branch"
+            echo "Branch for Hive ${{ steps.hive.outputs.latest }} already exists: $branch"
+            exit 0
           fi
+
+          git checkout -b "$branch"
 
           sed -i "s/ARG HIVE_VERSION=.*/ARG HIVE_VERSION=${{ steps.hive.outputs.latest }}/" $DOCKERFILE_PATH
 

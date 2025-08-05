@@ -74,19 +74,20 @@ jobs:
 
           git checkout -b "$branch"
 
+          # Update HIVE_VERSION in Dockerfile
           sed -i "s/ARG HIVE_VERSION=.*/ARG HIVE_VERSION=${{ steps.hive.outputs.latest }}/" $DOCKERFILE_PATH
 
-          # Update SCHEMA_VERSION in entrypoint.sh and healthcheck.sh
+          # Update SCHEMA_VERSION in Dockerfile, entrypoint.sh and healthcheck.sh
           schema_version="$(echo "${{ steps.hive.outputs.latest }}" | cut -d'.' -f1,2).0"
           sed -i "s/SCHEMA_VERSION=\"[0-9.]*\"/SCHEMA_VERSION=\"$schema_version\"/" entrypoint.sh
           sed -i "s/SCHEMA_VERSION=\"[0-9.]*\"/SCHEMA_VERSION=\"$schema_version\"/" healthcheck.sh
-          git add entrypoint.sh healthcheck.sh
+          sed -i "s/ARG SCHEMA_VERSION=.*/ARG SCHEMA_VERSION=\"$schema_version\"/" $DOCKERFILE_PATH
 
           # Fetch SHA256 and update versions.json
           sha=$(curl -s $HIVE_DOWNLOAD_BASE/hive-${{ steps.hive.outputs.latest }}/apache-hive-${{ steps.hive.outputs.latest }}-bin.tar.gz.sha256 | cut -d' ' -f1)
           jq --arg v "${{ steps.hive.outputs.latest }}" --arg s "$sha" '.hive[$v] = {sha256: $s}' $VERSION_FILE > tmp.json && mv tmp.json $VERSION_FILE
 
-          git add $VERSION_FILE
+          git add $DOCKERFILE_PATH $VERSION_FILE entrypoint.sh healthcheck.sh
 
       - name: Verify updated version strings
         if: steps.hive.outputs.latest != steps.current.outputs.current
@@ -100,16 +101,6 @@ jobs:
         if: steps.hive.outputs.latest != steps.current.outputs.current
         run: git status && git diff
 
-      - name: Commit and push changes
-        if: steps.hive.outputs.latest != steps.current.outputs.current
-        run: |
-          set -e
-          branch="hive-update-${{ steps.hive.outputs.latest }}"
-          git config --local user.email "${{ env.GIT_USER_EMAIL }}"
-          git config --local user.name "${{ env.GIT_USER_NAME }}"
-          git commit --allow-empty -am "Update to Hive ${{ steps.hive.outputs.latest }}"
-          git log -1
-          git push --verbose origin "$branch"
 
       - name: Create Pull Request
         if: steps.hive.outputs.latest != steps.current.outputs.current

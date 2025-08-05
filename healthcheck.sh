@@ -7,7 +7,7 @@ command -v xxd > /dev/null || { echo "xxd is required"; exit 1; }
 
 HOST="${HIVE_METASTORE_HOST:-localhost}"
 PORT="${HIVE_METASTORE_PORT:-9083}"
-SCHEMA_VERSION="4.0.0"
+SCHEMA_VERSION="4.1.0"
 
 if [ ! -f /tmp/metastore-ready ]; then
   [ -t 1 ] && echo "Metastore starting"

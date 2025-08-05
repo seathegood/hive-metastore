@@ -24,7 +24,7 @@ export PATH="$HADOOP_HOME/bin:$PATH"
 : "${METASTORE_DB_URL:=jdbc:postgresql://${METASTORE_DB_HOST}:${METASTORE_DB_PORT}/${METASTORE_DB}}"
 
 # Set hive schema version
-SCHEMA_VERSION="4.0.0"
+SCHEMA_VERSION="4.1.0"
 
 # Log config
 echo "Hive Home:       $HIVE_HOME"

@@ -40,9 +40,7 @@ jobs:
         id: current
         run: |
           current=$(grep -oP 'ARG HIVE_VERSION=\K[0-9.]+' $DOCKERFILE_PATH)
-          echo "current<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$current" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
 
       - name: Check if update is needed
         run: |
@@ -89,12 +87,26 @@ jobs:
           sha=$(curl -s $HIVE_DOWNLOAD_BASE/hive-${{ steps.hive.outputs.latest }}/apache-hive-${{ steps.hive.outputs.latest }}-bin.tar.gz.sha256 | cut -d' ' -f1)
           jq --arg v "${{ steps.hive.outputs.latest }}" --arg s "$sha" '.hive[$v] = {sha256: $s}' $VERSION_FILE > tmp.json && mv tmp.json $VERSION_FILE
 
-
           git add $VERSION_FILE
+
+      - name: Verify updated version strings
+        if: steps.hive.outputs.latest != steps.current.outputs.current
+        run: |
+          grep HIVE_VERSION $DOCKERFILE_PATH
+          grep SCHEMA_VERSION entrypoint.sh
+          grep SCHEMA_VERSION healthcheck.sh
+          jq '.hive' versions.json
+
+      - name: Show git diff for debugging
+        if: steps.hive.outputs.latest != steps.current.outputs.current
+        run: git status && git diff
+
+      - name: Commit and push changes
+        if: steps.hive.outputs.latest != steps.current.outputs.current
+        run: |
           git config --local user.email "${{ env.GIT_USER_EMAIL }}"
           git config --local user.name "${{ env.GIT_USER_NAME }}"
-
-          git commit -am "Update to Hive ${{ steps.hive.outputs.latest }}"
+          git commit --allow-empty -am "Update to Hive ${{ steps.hive.outputs.latest }}"
           git push origin "$branch"
 
       - name: Create Pull Request

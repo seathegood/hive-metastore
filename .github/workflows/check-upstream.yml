@@ -50,30 +50,23 @@ jobs:
           echo "New version found: ${{ steps.hive.outputs.latest }}"
           echo "Current version: ${{ steps.current.outputs.current }}"
 
-      - name: Install GitHub CLI
-        if: steps.hive.outputs.latest != steps.current.outputs.current
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gh          
-
       - name: Install jq
         if: steps.hive.outputs.latest != steps.current.outputs.current
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Update Dockerfile and versions.json on new branch
-        if: steps.hive.outputs.latest != steps.current.outputs.current
+      - name: Check if branch already exists remotely
+        id: branch-check
         run: |
-          git checkout main
-          git pull origin main
-          branch="hive-update-${{ steps.hive.outputs.latest }}"
-
-          if git ls-remote --exit-code --heads origin "$branch"; then
-            echo "Branch for Hive ${{ steps.hive.outputs.latest }} already exists: $branch"
-            exit 0
+          BRANCH="hive-update-${{ steps.hive.outputs.latest }}"
+          if git ls-remote --exit-code --heads origin "$BRANCH"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-          git checkout -b "$branch"
-
+      - name: Update files
+        if: steps.branch-check.outputs.exists == 'false'
+        run: |
           # Update HIVE_VERSION in Dockerfile
           sed -i "s/ARG HIVE_VERSION=.*/ARG HIVE_VERSION=${{ steps.hive.outputs.latest }}/" $DOCKERFILE_PATH
 
@@ -90,7 +83,7 @@ jobs:
           git add $DOCKERFILE_PATH $VERSION_FILE entrypoint.sh healthcheck.sh
 
       - name: Verify updated version strings
-        if: steps.hive.outputs.latest != steps.current.outputs.current
+        if: steps.branch-check.outputs.exists == 'false'
         run: |
           grep HIVE_VERSION $DOCKERFILE_PATH
           grep SCHEMA_VERSION entrypoint.sh
@@ -98,13 +91,13 @@ jobs:
           jq '.hive' versions.json
 
       - name: Show git diff for debugging
-        if: steps.hive.outputs.latest != steps.current.outputs.current
+        if: steps.branch-check.outputs.exists == 'false'
         run: git status && git diff
 
 
       - name: Create Pull Request
-        if: steps.hive.outputs.latest != steps.current.outputs.current
-        uses: peter-evans/create-pull-request@v6
+        if: steps.branch-check.outputs.exists == 'false'
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: update to Hive ${{ steps.hive.outputs.latest }}"
@@ -113,10 +106,9 @@ jobs:
             This pull request updates Hive to version ${{ steps.hive.outputs.latest }}.
             Please review and test before merging.
           branch: hive-update-${{ steps.hive.outputs.latest }}
-          base: main
 
       - name: Summary
-        if: steps.hive.outputs.latest != steps.current.outputs.current
+        if: steps.branch-check.outputs.exists == 'false'
         run: |
           echo "### Hive version update" >> $GITHUB_STEP_SUMMARY
           echo "- Current: ${{ steps.current.outputs.current }}" >> $GITHUB_STEP_SUMMARY

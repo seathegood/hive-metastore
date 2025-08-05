@@ -32,8 +32,10 @@ jobs:
       - name: Get current version from Dockerfile
         id: current
         run: |
-          current=$(grep -oP 'ARG HIVE_VERSION=\K[0-9.]+' $DOCKERFILE_PATH)
-          echo "current=$current" >> "$GITHUB_OUTPUT"
+          current=$(grep -oP 'ARG HIVE_VERSION=\K[0-9.]+' "$DOCKERFILE_PATH" | head -n1)
+          echo "current<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$current" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Check if update is needed
         run: |

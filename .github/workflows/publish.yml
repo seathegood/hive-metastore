@@ -108,23 +108,9 @@ jobs:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: /tmp/digests/*
           retention-days: 1
-  scan:
-    name: Trivy Security Scan
-    runs-on: ubuntu-latest
-    needs: build
-    continue-on-error: false
-    steps:
-      - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.30.0
-        with:
-          image-ref: ${{ env.REGISTRY_IMAGE }}:${{ github.event.release.tag_name }}
-          format: table
-          exit-code: 1
-          severity: CRITICAL,HIGH
-          
   merge:
     runs-on: ubuntu-latest
-    needs: [build, scan]
+    needs: build
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -155,6 +141,14 @@ jobs:
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: ${{ env.REGISTRY_IMAGE }}:${{ github.event.release.tag_name }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
 
       - name: Inspect image
         run: |

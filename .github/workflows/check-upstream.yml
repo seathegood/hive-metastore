@@ -103,11 +103,13 @@ jobs:
       - name: Commit and push changes
         if: steps.hive.outputs.latest != steps.current.outputs.current
         run: |
+          set -e
           branch="hive-update-${{ steps.hive.outputs.latest }}"
           git config --local user.email "${{ env.GIT_USER_EMAIL }}"
           git config --local user.name "${{ env.GIT_USER_NAME }}"
           git commit --allow-empty -am "Update to Hive ${{ steps.hive.outputs.latest }}"
-          git push origin "$branch"
+          git log -1
+          git push --verbose origin "$branch"
 
       - name: Create Pull Request
         if: steps.hive.outputs.latest != steps.current.outputs.current

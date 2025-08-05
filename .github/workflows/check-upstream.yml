@@ -68,8 +68,14 @@ jobs:
           git checkout main
           git pull origin main
           branch="hive-update-${{ steps.hive.outputs.latest }}"
-          git checkout -b "$branch"
-          git pull origin main
+
+          if git ls-remote --exit-code --heads origin "$branch"; then
+            git fetch origin "$branch":"$branch"
+            git checkout "$branch"
+            git reset --hard origin/"$branch"
+          else
+            git checkout -b "$branch"
+          fi
 
           sed -i "s/ARG HIVE_VERSION=.*/ARG HIVE_VERSION=${{ steps.hive.outputs.latest }}/" $DOCKERFILE_PATH
 

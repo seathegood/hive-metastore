@@ -65,6 +65,8 @@ jobs:
       - name: Update Dockerfile and versions.json on new branch
         if: steps.hive.outputs.latest != steps.current.outputs.current
         run: |
+          git checkout main
+          git pull origin main
           branch="hive-update-${{ steps.hive.outputs.latest }}"
           git checkout -b "$branch"
           git pull origin main
@@ -100,6 +102,7 @@ jobs:
             This pull request updates Hive to version ${{ steps.hive.outputs.latest }}.
             Please review and test before merging.
           branch: hive-update-${{ steps.hive.outputs.latest }}
+          base: main
 
       - name: Summary
         if: steps.hive.outputs.latest != steps.current.outputs.current

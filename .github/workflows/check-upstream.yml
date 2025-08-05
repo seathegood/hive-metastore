@@ -75,7 +75,7 @@ jobs:
           schema_version="$(echo "${{ steps.hive.outputs.latest }}" | cut -d'.' -f1,2).0"
           sed -i "s/SCHEMA_VERSION=\"[0-9.]*\"/SCHEMA_VERSION=\"$schema_version\"/" entrypoint.sh
           sed -i "s/SCHEMA_VERSION=\"[0-9.]*\"/SCHEMA_VERSION=\"$schema_version\"/" healthcheck.sh
-          sed -i "s/ARG SCHEMA_VERSION=.*/ARG SCHEMA_VERSION=\"$schema_version\"/" $DOCKERFILE_PATH
+          sed -i "s/ARG SCHEMA_VERSION=.*/ARG SCHEMA_VERSION=$schema_version/" $DOCKERFILE_PATH
 
           # Fetch SHA256 and update versions.json
           sha=$(curl -s $HIVE_DOWNLOAD_BASE/hive-${{ steps.hive.outputs.latest }}/apache-hive-${{ steps.hive.outputs.latest }}-bin.tar.gz.sha256 | cut -d' ' -f1)

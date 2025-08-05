@@ -71,8 +71,13 @@ jobs:
         # Load the SHA256 hash for the tarball from versions.json using the release tag
         id: hive_hash
         run: |
-          version=${{ github.event.release.tag_name }}
-          hash=$(jq -r --arg v "$version" '.hive[$v].sha256' versions.json)
+          version="${{ github.event.release.tag_name }}"
+          version_no_v="${version#v}"
+          hash=$(jq -r --arg v "$version_no_v" '.hive[$v].sha256' versions.json)
+          if [ "$hash" = "null" ] || [ -z "$hash" ]; then
+            echo "ERROR: SHA256 not found for Hive version $version_no_v"
+            exit 1
+          fi
           echo "HIVE_TARBALL_SHA256=$hash" >> $GITHUB_ENV
 
       - name: Build and push by digest

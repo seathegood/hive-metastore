@@ -37,7 +37,7 @@ jobs:
         with:
           images: seathegood/hive-metastore
           tags: |
-            type=semver,pattern={{version}},prefix=v,remove-prefix=true
+            type=semver,pattern={{version}},remove-prefix=true
             type=raw,value=latest
             type=raw,value=stable,enable=${{ startsWith(github.ref_name, 'v') && !contains(github.ref_name, '-') }}
             type=sha
@@ -130,7 +130,7 @@ jobs:
         with:
           images: seathegood/hive-metastore
           tags: |
-            type=semver,pattern={{version}},prefix=v,remove-prefix=true
+            type=semver,pattern={{version}},remove-prefix=true
             type=raw,value=latest
             type=raw,value=stable,enable=${{ startsWith(github.ref_name, 'v') && !contains(github.ref_name, '-') }}
             type=sha
